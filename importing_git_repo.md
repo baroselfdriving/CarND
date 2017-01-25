@@ -21,7 +21,7 @@ git branch -d P2-TrafficSigns                  # to get rid of the extra branch 
 git push                           			   # if you have a remote, that is
 ```
 
-# References
+## References
 
 * [This StackOverflow post] (http://stackoverflow.com/questions/1683531/how-to-import-existing-git-repository-into-another)
 
