@@ -91,3 +91,11 @@ ENV/
 # Data
 notMNIST.pickle
 *.zip
+
+data
+.ipynb_checkpoints
+*.h5
+models
+*.swp
+*.p
+
