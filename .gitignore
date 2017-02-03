@@ -98,4 +98,8 @@ data
 models
 *.swp
 *.p
-
+.ipynb_checkpoints
+__pycache__
+bvlc-alexnet.npy
+train.p
+.vscode
