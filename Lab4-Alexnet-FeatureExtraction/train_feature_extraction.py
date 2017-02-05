@@ -77,4 +77,27 @@ with tf.Session() as sess:
         print("Validation Accuracy = {:.3f}".format(validation_accuracy))
         print()
         
+#=======================================================
+# test
+#=======================================================
+# Read Images
+im1 = imread("construction.jpg").astype(np.float32)
+im1 = im1 - np.mean(im1)
 
+im2 = imread("stop.jpg").astype(np.float32)
+im2 = im2 - np.mean(im2)
+
+# Run Inference
+t = time.time()
+probabilities = tf.nn.softmax(logits)
+output = sess.run(probabilities, feed_dict={x: [im1, im2]})
+
+# Print Output
+for input_im_ind in range(output.shape[0]):
+    inds = np.argsort(output)[input_im_ind, :]
+    print("Image", input_im_ind)
+    for i in range(5):
+        print("%s: %.3f" % (class_names[inds[-1 - i]], output[input_im_ind, inds[-1 - i]]))
+    print()
+
+print("Time: %.3f seconds" % (time.time() - t))
