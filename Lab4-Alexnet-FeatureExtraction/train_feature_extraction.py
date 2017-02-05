@@ -13,17 +13,7 @@ nb_classes = len(np.unique(y_train))
 
 # TODO: Split data into training and validation sets.
 X_train, y_train = shuffle(X_train, y_train)
-X_train, X_validation, y_train, y_validation = train_test_split(X_train, y_train, test_size=0.2, random_state=0)
-
-# normalise data
-def normalize_grayscale(image_data):
-    a = -0.5
-    b = 0.5
-    grayscale_min = 0
-    grayscale_max = 255
-    return a + ( ( (image_data - grayscale_min)*(b - a) )/( grayscale_max - grayscale_min ) )
-
-X_normalized = normalize_grayscale(X_train)
+X_train, X_validation, y_train, y_validation = train_test_split(X_train, y_train, test_size=0.33, random_state=0)
 
 # TODO: Define placeholders and resize operation.
 x = tf.placeholder(tf.float32, (None, 32, 32, 3))
@@ -47,7 +37,7 @@ logits = tf.nn.xw_plus_b(fc7, fc8W, fc8b)
 # HINT: Look back at your traffic signs project solution, you may
 # be able to reuse some the code.
 EPOCHS = 10
-BATCH_SIZE = 50
+BATCH_SIZE = 128
 
 cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, y)
 loss_operation = tf.reduce_mean(cross_entropy)
