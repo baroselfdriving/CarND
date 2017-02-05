@@ -1,6 +1,8 @@
 import pickle
 import tensorflow as tf
 import numpy as np
+import time
+from scipy.misc import imread
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from alexnet import AlexNet
