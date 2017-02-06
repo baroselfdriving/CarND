@@ -13,10 +13,10 @@ Before you start the lab, you should first install:
 
 ## Getting Started
 * Original location of sources: https://github.com/udacity/CarND-Alexnet-Feature-Extraction
-* Download ![Training data](https://d17h27t6h515a5.cloudfront.net/topher/2016/October/580a829f_train/train.p)
-* Download ![AlexNet weights](https://d17h27t6h515a5.cloudfront.net/topher/2016/October/580d880c_bvlc-alexnet/bvlc-alexnet.npy)
+* Download [Training data](https://d17h27t6h515a5.cloudfront.net/topher/2016/October/580a829f_train/train.p)
+* Download [AlexNet weights](https://d17h27t6h515a5.cloudfront.net/topher/2016/October/580d880c_bvlc-alexnet/bvlc-alexnet.npy)
 * Make sure the downloaded files are in the code directory as the code.
-* ![Alexnet](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
+* [Alexnet](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
 
 AlexNet is a popular base network for transfer learning because its structure is relatively straightforward, it's not too big, and it performs well empirically.
 
