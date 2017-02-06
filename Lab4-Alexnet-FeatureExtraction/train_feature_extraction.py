@@ -38,8 +38,8 @@ logits = tf.nn.xw_plus_b(fc7, fc8W, fc8b)
 # TODO: Define loss, training, accuracy operations.
 # HINT: Look back at your traffic signs project solution, you may
 # be able to reuse some the code.
-EPOCHS = 1
-BATCH_SIZE = 50#128
+EPOCHS = 10
+BATCH_SIZE = 128
 
 cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, y)
 loss_operation = tf.reduce_mean(cross_entropy)
