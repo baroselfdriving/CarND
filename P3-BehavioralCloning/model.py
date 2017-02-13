@@ -19,41 +19,25 @@ print('Data format: ', samples[0])
 # Don't need the header anymore
 samples.pop(0)
 
+#=============================================================
 # Visualise steering distributions
 # Note: Not sure what units they are in. If it's 'angle', it's most likely to be radians
 # Note: NVidia paper uses inverse radius 1/r for steering input
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 def read_image(filename):
     image = cv2.imread(filename)
     return cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 
-def plot_steering_distribution(dataset, title):
-    steering = [np.float32(x[3]) for x in dataset]
-    print('Steering range: (', min(steering), ',', max(steering), ')')
-    plt.figure()
-    plt.hist(steering, bins=101)
-    plt.xlabel('steering input')
-    plt.ylabel('count')
-    plt.title(title)
-    plt.show()
-
 center_image_names = ['./sample_data/IMG/'+x[0].split('/')[-1] for x in samples]
-left_image_names = ['./sample_data/IMG/'+x[1].split('/')[-1] for x in samples]
-right_image_names = ['./sample_data/IMG/'+x[2].split('/')[-1] for x in samples]
-
 sample_image = read_image(center_image_names[0])
 imrows, imcols, imch = sample_image.shape
 
 print('Training images have: ', imrows, 'rows,', imcols, 'columns,', imch, 'channels')
-plt.figure()
-plt.imshow(sample_image)
-plt.title('Sample training image')
-plot_steering_distribution(samples, 'Distribution of steering inputs')
 
+#===============================================================
 # Preprocess input data to make it more useful
 
 import random
@@ -69,22 +53,27 @@ def cull_steering_range(samples, keep_ratio = 0.1, min_steer=-0.001, max_steer=0
 
 culled_samples = cull_steering_range(samples,keep_ratio=0.05)
 print('Number of samples after cull:', len(culled_samples))
-plot_steering_distribution(culled_samples, 'Distribution of steering inputs after cull')
 
 # augment data with flipped images and angles
 def set_flip_flag(samples, flip_ratio=0.5):
     selected = random.sample(samples, int(flip_ratio * len(samples)))
     for row in selected:
         row[3] = "{}".format(-1*float(row[3]))
-        row[7] = 'f'
+        row[7] = 'f' # set the flag here. Flip the image online within the generator
     return samples
 
 valid_samples = culled_samples
 valid_samples.extend(set_flip_flag(copy.deepcopy(culled_samples), flip_ratio=0.95))
 
 print('Number of samples after adding flipped images:', len(valid_samples))
-plot_steering_distribution(valid_samples, 'Distribution of steering inputs after adding flipped images')
 
+# Increase data by using left images and damping left steers and enhancing right steers
+# TODO
+
+# Increase data by using right images and damping right steers and enhancing left steers
+# TODO
+
+#==================================================================
 # split data into training and validation sets
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
@@ -94,16 +83,14 @@ train_samples, validation_samples = train_test_split(valid_samples, test_size=0.
 print('Number of training samples:', len(train_samples))
 print('Number of validation samples:', len(validation_samples))
 
+#===================================================================
 # Generator function to avoid loading all images and data into memory
 
 def flip_image(image):
     image = np.fliplr(image)
     return image
 
-def crop_image(image, rowmin, rowmax):
-    return image[rowmin:rowmax,:,:]
-
-def generate_batch(samples, batch_size, crop_row_start,crop_row_end, cols, depth):
+def generate_batch(samples, batch_size):
     num_samples = len(samples)
     while 1:
         shuffle(samples)
@@ -114,7 +101,6 @@ def generate_batch(samples, batch_size, crop_row_start,crop_row_end, cols, depth
             angles = []
             for sample in batch_samples:
                 image = read_image('./sample_data/IMG/'+sample[0].split('/')[-1])
-                image = crop_image(image,crop_row_start,crop_row_end)
                 if sample[7] is 'f':
                     image = flip_image(image) # angles are already flipped
                 images.append(image)
@@ -125,32 +111,21 @@ def generate_batch(samples, batch_size, crop_row_start,crop_row_end, cols, depth
             y_train = np.array(angles)
             yield shuffle(X_train, y_train)
 
+#=========================================================================
 # Define network
-# We implement CNN architecture from the nvidia paper with a couple of modifications 
-# The architecture is organised as follows:
-
-# - input image (YUV), 3@80x320
-# - normalisation, 3@80x320
-# - convolution (5x5, stride=2), 24@38x158
-# - convolution (5x5, stride=2), 36@17x77
-# - convolution (5x5, stride=2), 48@7x37
-# - convolution (3x3, stride=2), 64@3x18
-# - convolution (3x3, strive=1), 64@1x16
-# - flatten (1024)
-# - fully connected (100) 
-# - fully connected (50)
-# - fully connected (10)
-# - fully connected (1)
-# - Output
+# We implement CNN architecture from the nvidia paper with a few modifications 
+# (added relu activations, max-pooling and drop-outs)
 
 from keras.models import Sequential
+from keras.layers import Cropping2D
 from keras.layers.core import Lambda, Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 
 # generate the neural network
 model = Sequential()
-model.add(Lambda(lambda x: x/127.5 - 1.,input_shape=(imrows, imcols, imch), output_shape=(imrows, imcols, imch)))
+model.add(Cropping2D(cropping=((60,20), (0,0)), input_shape=(imrows, imcols, imch))) # crop to track
+model.add(Lambda(lambda x: x/127.5 - 1.)) # normalise
 model.add(Convolution2D(24, 5, 5, activation=None, subsample=(1,1)))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Convolution2D(36, 5, 5, activation=None, subsample=(1,1)))
@@ -168,22 +143,23 @@ model.add(Dense(1))
 # print a summary of the NN
 model.summary()
 
+
+#=======================================================================
 # compile and train the model using the generator function
 EPOCHS = 5
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
-train_generator = generate_batch(train_samples, batch_size=BATCH_SIZE,
-                                 crop_row_start=row_start, crop_row_end=row_end,
-                                 cols=imcols,depth=imch)
-
-validation_generator = generate_batch(validation_samples, batch_size=BATCH_SIZE,
-                                      crop_row_start=row_start, crop_row_end=row_end,
-                                      cols=imcols,depth=imch)
+train_generator = generate_batch(train_samples, batch_size=BATCH_SIZE)
+validation_generator = generate_batch(validation_samples, batch_size=BATCH_SIZE)
 
 model.compile(loss='mse', optimizer='adam')
 model.fit_generator(train_generator, samples_per_epoch=len(train_samples), 
                     validation_data=validation_generator, nb_val_samples=len(validation_samples), 
                     nb_epoch=EPOCHS)
 
-
+#=======================================================================
+# Save the model and weights
+from keras.models import load_model
+model.save("./model.h5")
+print("Saved model to disk")
 
