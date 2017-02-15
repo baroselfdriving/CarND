@@ -7,48 +7,9 @@ This report describes my implementation of a convolutional neural network (CNN) 
 
 This report describes results from training performed using the sample dataset provided by Udacity. As demonstrated in [this video](https://youtu.be/WBbD0AUHC_c), the network generates smooth steering angles on track 1. Also see [this video](https://www.youtube.com/watch?v=-qglBedY3i4) for front camera view. Although not described here, I have also successfully trained the network to work on this track using a training set consisting of images from both tracks 1 and 2 that I acquired by manually driving the car.
 
+[Overhead Camera](https://www.youtube.com/embed/WBbD0AUHC_c "Overhead Camera")
 
-```python
-#=====================================================================
-# Demo video of autonomous steering control using the network described in this report
-import IPython
-print('Overhead Camera')
-vid = IPython.display.YouTubeVideo("WBbD0AUHC_c")
-IPython.display.display(vid)
-print('Front Camera (Apologies for the low quality)')
-vid = IPython.display.YouTubeVideo("-qglBedY3i4")
-IPython.display.display(vid)
-```
-
-    Overhead Camera
-
-
-
-
-        <iframe
-            width="400"
-            height="300"
-            src="https://www.youtube.com/embed/WBbD0AUHC_c"
-            frameborder="0"
-            allowfullscreen
-        ></iframe>
-        
-
-
-    Front Camera (Apologies for the low quality)
-
-
-
-
-        <iframe
-            width="400"
-            height="300"
-            src="https://www.youtube.com/embed/-qglBedY3i4"
-            frameborder="0"
-            allowfullscreen
-        ></iframe>
-        
-
+[Front Camera (Apologies for the low quality)](https://www.youtube.com/embed/-qglBedY3i4 "Front Camera")
 
 ### Submission
 
