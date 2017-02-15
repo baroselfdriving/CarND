@@ -412,11 +412,6 @@ model.fit_generator(train_generator, samples_per_epoch=len(train_samples),
 
 
 
-
-    <keras.callbacks.History at 0x7f0e9476a940>
-
-
-
 ### Saving the trained model
 
 The model is now trained. I was monitoring the training and validation losses as I experimented with different sets of parameters and data set augmentation techniques. If the losses were poor on both training and validation, that would have indicated underfitting. On the other hand, losses low on the training set but poor on the validation set would have indicated overfitting. The trained model is saved using the code snippet below. The model is ready to be used to test drive the simulated car autonomously.
