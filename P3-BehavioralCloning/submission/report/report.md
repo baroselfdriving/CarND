@@ -274,15 +274,6 @@ plt.imshow(image[0])
     Batch: 2 , num images:  32 , num angles: 32
     Batch: 3 , num images:  32 , num angles: 32
 
-
-
-
-
-    <matplotlib.image.AxesImage at 0x7f0ee4d68828>
-
-
-
-
 ![png](output_15_2.png)
 
 
