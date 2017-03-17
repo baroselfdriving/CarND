@@ -1,0 +1,8 @@
+* Additional highlights that need to go into confluence page at some point:
+
+- Nvidia Drive PX2 and what it does: https://www.youtube.com/watch?v=URmxzxYlmtg
+- supervised classification algorithms - naive bayes, support vector machines, decision trees
+- entropy and information gain
+- bias-variance dilemma
+- HoG paper
+
