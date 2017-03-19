@@ -5,4 +5,7 @@
 - entropy and information gain
 - bias-variance dilemma
 - HoG paper
-
+- Creating feature vectors with HoG
+- Multiscale HoG windows
+- heat maps to combine multiple detections
+- 
