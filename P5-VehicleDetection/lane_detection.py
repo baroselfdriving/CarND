@@ -317,28 +317,3 @@ class LaneDetector:
             cv2.putText(resultImage, curvatureInfo, (10,30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, [255,255,255], 1) 
             cv2.putText(resultImage, vehiclePosInfo, (10,60), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, [255,255,255], 1) 
             return resultImage
-
-#=====================================================================
-# process the project video
-
-# Import everything needed to edit/save/watch video clips
-from moviepy.editor import VideoFileClip
-from IPython.display import HTML
-
-bDebug = False
-
-# set inputs and putputs
-input_video = VideoFileClip("project_video.mp4")
-if bDebug is True:
-    output_video_name = 'output_debug.mp4'
-else:
-    output_video_name = 'output.mp4'
-
-# setup the processor
-processor = LaneDetector()
-processor.set_debug(bDebug)
-process_image = processor.process_image
-
-# process the input video
-output_video = input_video.fl_image(process_image)
-output_video.write_videofile(output_video_name, audio=False)
