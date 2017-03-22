@@ -8,4 +8,4 @@
 - Creating feature vectors with HoG
 - Multiscale HoG windows
 - heat maps to combine multiple detections
-- 
+- Others have used SSD classifier instead for faster detection (see https://arxiv.org/abs/1512.02325)
