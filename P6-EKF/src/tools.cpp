@@ -79,3 +79,13 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state)
 
     return Hj;
 }
+
+Eigen::VectorXd TransformRadarMeasurement(const Eigen::VectorXd& radar_measurement)
+{
+    Eigen::VectorXd state(4);
+
+    // TODO: fill this up
+
+    return state;
+}
+
