@@ -64,6 +64,13 @@ public:
    */
   void UpdateEKF(const Eigen::VectorXd &z);
 
+private:
+
+  /**
+   * Apply the KF update given innovation
+   * @param y The innovation error
+   */
+  void UpdateOnInnovation(const Eigen::VectorXd &y);
 };
 
 #endif /* KALMAN_FILTER_H_ */

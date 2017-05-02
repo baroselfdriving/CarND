@@ -8,7 +8,8 @@ KalmanFilter::KalmanFilter() {}
 KalmanFilter::~KalmanFilter() {}
 
 void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
-                        MatrixXd &H_in, MatrixXd &R_in, MatrixXd &Q_in) {
+                        MatrixXd &H_in, MatrixXd &R_in, MatrixXd &Q_in)
+{
   x_ = x_in;
   P_ = P_in;
   F_ = F_in;
@@ -17,13 +18,32 @@ void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
   Q_ = Q_in;
 }
 
-void KalmanFilter::Predict() {
+void KalmanFilter::Predict()
+{
     x_ = F_ * x_;
     P_ = F_ * P_ * F_.transpose() + Q_;
 }
 
-void KalmanFilter::Update(const VectorXd &z) {
-    VectorXd y = z - H_ * x_;
+void KalmanFilter::Update(const VectorXd &z)
+{
+    const VectorXd y = z - H_ * x_;
+    UpdateOnInnovation(y);
+}
+
+void KalmanFilter::UpdateEKF(const VectorXd &z)
+{
+    VectorXd expected(3);
+    const double d = sqrt(x_[0] * x_[0] + x_[1] + x_[1]);
+    expected << d, atan2(x_[1], x_[0]), (x_[0] * x_[2] + x_[1] * x_[3])/d;
+
+    // todo: fix angle range to [-pi,pi]
+
+    const VectorXd y = z - expected;
+    UpdateOnInnovation(y);
+}
+
+void KalmanFilter::UpdateOnInnovation(const Eigen::VectorXd &y)
+{
     MatrixXd Ht = H_.transpose();
     MatrixXd S = H_ * P_ * Ht + R_;
     MatrixXd Si = S.inverse();
@@ -31,11 +51,4 @@ void KalmanFilter::Update(const VectorXd &z) {
 
     x_ = x_ + (K * y);
     P_ = P_ - (K * H_ * P_);
-}
-
-void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  /**
-  TODO:
-    * update the state by using Extended Kalman Filter equations
-  */
 }
