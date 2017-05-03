@@ -50,30 +50,31 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state)
     MatrixXd Hj = MatrixXd::Zero(3,4);
 
     //recover state parameters
-    float px = x_state(0);
-    float py = x_state(1);
-    float vx = x_state(2);
-    float vy = x_state(3);
+    const double px = x_state(0);
+    const double py = x_state(1);
+    const double vx = x_state(2);
+    const double vy = x_state(3);
 
-    double d = sqrt(px*px + py*py);
-    double d2 = d*d;
-    double d32 = d*d2;
-    double eeps = 1e-6;
+    const double d = sqrt(px*px + py*py);
 
     //check division by zero
+    const double eeps = 1e-6;
     if(d < eeps)
     {
         std::cerr << "[CalculateJacobian] Division by zero" << std::endl;
         return Hj;
     }
 
-    //compute the Jacobian matrix
+    const double d2 = d*d;
+    const double d32 = d*d2;
+    const double pj = (vx*py - vy*px)/d32;
+
     Hj(0,0) = px/d;
     Hj(0,1) = py/d;
-    Hj(1,0) = -py/(d2);
-    Hj(1,1) = px/(d2);
-    Hj(2,0) = py*(vx*py - vy*px)/d32;
-    Hj(2,1) = px*(vy*px - vx*py)/d32;
+    Hj(1,0) = -py/d2;
+    Hj(1,1) = px/d2;
+    Hj(2,0) = py*pj;
+    Hj(2,1) = -px*pj;
     Hj(2,2) = Hj(0,0);
     Hj(2,3) = Hj(0,1);
 
