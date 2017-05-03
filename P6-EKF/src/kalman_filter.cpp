@@ -33,13 +33,13 @@ void KalmanFilter::Update(const VectorXd &z)
 void KalmanFilter::UpdateEKF(const VectorXd &z)
 {
     const double d = sqrt(x_[0] * x_[0] + x_[1] + x_[1]);
-    double phi = atan2(x_[1], x_[0]);
-    phi = atan2(sin(phi), cos(phi)); // elegant but expensive way to handle discontinuities at pi
-
+    const double phi = atan2(x_[1], x_[0]);
     VectorXd expected(3);
     expected << d, phi, (x_[0] * x_[2] + x_[1] * x_[3])/d;
 
-    const VectorXd y = z - expected;
+    VectorXd y = z - expected;
+    y[1] = atan2(sin(y[1]), cos(y[1])); // elegant but expensive way to ensure phi error is in [-pi,pi]
+
     UpdateOnInnovation(y);
 }
 
