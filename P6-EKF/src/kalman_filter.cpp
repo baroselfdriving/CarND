@@ -32,7 +32,7 @@ void KalmanFilter::Update(const VectorXd &z)
 
 void KalmanFilter::UpdateEKF(const VectorXd &z)
 {
-    const double d = sqrt(x_[0] * x_[0] + x_[1] + x_[1]);
+    const double d = sqrt(x_[0] * x_[0] + x_[1] * x_[1]);
     const double phi = atan2(x_[1], x_[0]);
     const double dd = (d < 0.0001)?(0):((x_[0] * x_[2] + x_[1] * x_[3])/d);
     VectorXd expected(3);
