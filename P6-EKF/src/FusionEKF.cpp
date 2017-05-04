@@ -87,6 +87,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack)
   const double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;	//dt - expressed in seconds
   previous_timestamp_ = measurement_pack.timestamp_;
 
+  //todo: skip prediction if dt = 0
+
   //1. Modify the F matrix so that the time is integrated
   ekf_.F_(0,2) = dt;
   ekf_.F_(1,3) = dt;
