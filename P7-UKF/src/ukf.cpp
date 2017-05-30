@@ -11,7 +11,8 @@ using std::vector;
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF() {
+UKF::UKF()
+{
   // if this is false, laser measurements will be ignored (except during init)
   use_laser_ = true;
 
@@ -19,10 +20,10 @@ UKF::UKF() {
   use_radar_ = true;
 
   // initial state vector
-  x_ = VectorXd(5);
+  x_ = VectorXd::Zero(5);
 
   // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  P_ = MatrixXd::Identity(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 30;
@@ -45,13 +46,30 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
 
-  /**
-  TODO:
+  is_initialized_ = false;
 
-  Complete the initialization. See ukf.h for other member properties.
+  ///TODO: intialise the following properly.
 
-  Hint: one or more values initialized above might be wildly off...
-  */
+  // predicted sigma points matrix
+  MatrixXd Xsig_pred_;
+
+  // Weights of sigma points
+  VectorXd weights_;
+
+  // State dimension
+  int n_x_;
+
+  // Augmented state dimension
+  int n_aug_;
+
+  // Sigma point spreading parameter
+  double lambda_;
+
+  // the current NIS for radar
+  double NIS_radar_;
+
+  // the current NIS for laser
+  double NIS_laser_;
 }
 
 UKF::~UKF() {}
@@ -60,13 +78,39 @@ UKF::~UKF() {}
  * @param {MeasurementPackage} meas_package The latest measurement data of
  * either radar or laser.
  */
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  /**
-  TODO:
+void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
+{
 
-  Complete this function! Make sure you switch between lidar and radar
-  measurements.
-  */
+    // TODO: initialise
+    if( !is_initialized_ )
+    {
+        if( meas_package.sensor_type_ == MeasurementPackage::RADAR )
+        {
+
+        }
+        else if (meas_package.sensor_type_ == MeasurementPackage::LASER )
+        {
+
+        }
+        time_us_ = meas_package.timestamp_;
+        is_initialized_ = true;
+        return;
+    }
+
+    // TODO: predict
+    const double dt = (meas_package.timestamp_ - time_us_) / 1000000.0;	//dt - expressed in seconds
+    time_us_ = meas_package.timestamp_;
+    Prediction(dt);
+
+    // TODO: update
+    if( meas_package.sensor_type_ == MeasurementPackage::RADAR )
+    {
+        UpdateRadar(meas_package);
+    }
+    else if (meas_package.sensor_type_ == MeasurementPackage::LASER )
+    {
+        UpdateLidar(meas_package);
+    }
 }
 
 /**
@@ -87,7 +131,8 @@ void UKF::Prediction(double delta_t) {
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateLidar(MeasurementPackage meas_package) {
+void UKF::UpdateLidar(const MeasurementPackage& meas_package)
+{
   /**
   TODO:
 
@@ -102,7 +147,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * Updates the state and the state covariance matrix using a radar measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateRadar(MeasurementPackage meas_package) {
+void UKF::UpdateRadar(const MeasurementPackage& meas_package)
+{
   /**
   TODO:
 
