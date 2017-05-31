@@ -32,14 +32,17 @@ UKF::UKF()
   x_ = VectorXd::Zero(n_x_);
 
   // initial covariance matrix
+  /// TODO: set this
   P_ = MatrixXd::Identity(n_x_, n_x_);
+  P_(0,0) = 0.1;
+  P_(1,1) = 0.1;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  //TODO: set this
+  /// TODO: set this
   std_a_ = .30;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  // TODO: set this
+  /// TODO: set this
   std_yawdd_ = .30;
 
   // Laser measurement noise standard deviation position1 in m
@@ -59,8 +62,6 @@ UKF::UKF()
 
   is_initialized_ = false;
 
-  ///TODO: intialise the following properly.
-  ///
   const int n_sigma = 2 * n_aug_ + 1;
 
   // predicted sigma points matrix
@@ -71,7 +72,7 @@ UKF::UKF()
   weights_(0) = lambda_/(lambda_+n_aug_);
   for(int i = 1; i < n_sigma; ++i)
   {
-      weights_(i) = 1/(2*(lambda_ + n_aug_));
+      weights_(i) = 1/(2.*(lambda_ + n_aug_));
   }
 
   // the current NIS for radar
@@ -94,6 +95,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     // initialise state
     if( !is_initialized_ )
     {
+        is_initialized_ = true;
         if( meas_package.sensor_type_ == MeasurementPackage::RADAR )
         {
             x_ << meas_package.raw_measurements_[0] * cos(meas_package.raw_measurements_[1]),
@@ -108,8 +110,11 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
                   0, 0, 0;
 
         }
+        else
+        {
+            is_initialized_ = false;
+        }
         time_us_ = meas_package.timestamp_;
-        is_initialized_ = true;
         return;
     }
 
@@ -117,7 +122,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     const double dt = (meas_package.timestamp_ - time_us_) / 1000000.0;	//dt - expressed in seconds
     time_us_ = meas_package.timestamp_;
     Prediction(dt);
-/*
+
     // update
     if( meas_package.sensor_type_ == MeasurementPackage::RADAR )
     {
@@ -126,7 +131,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER )
     {
         UpdateLidar(meas_package);
-    }*/
+    }
 }
 
 /**
@@ -136,7 +141,6 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
  */
 void UKF::Prediction(double delta_t)
 {
-    std::cout << "[Prediction]" << std::endl;
 
     // create augmented state vector
     VectorXd x_aug = VectorXd::Zero(n_aug_);
@@ -144,9 +148,10 @@ void UKF::Prediction(double delta_t)
 
     // create augmented covariance matrix
     MatrixXd Q = MatrixXd::Zero(2,2);
-    MatrixXd P_aug = MatrixXd::Zero(n_aug_, n_aug_);
     Q(0,0) = std_a_ * std_a_;
     Q(1,1) = std_yawdd_ * std_yawdd_;
+
+    MatrixXd P_aug = MatrixXd::Zero(n_aug_, n_aug_);
     P_aug.topLeftCorner(n_x_, n_x_) = P_;
     P_aug.bottomRightCorner(2,2) = Q;
 
@@ -157,7 +162,7 @@ void UKF::Prediction(double delta_t)
     const int n_sigma = 2 * n_aug_ + 1;
 
     //create augmented sigma points
-    MatrixXd Xsig_aug = MatrixXd(n_aug_, n_sigma);
+    MatrixXd Xsig_aug = MatrixXd::Zero(n_aug_, n_sigma);
     Xsig_aug.col(0) = x_aug;
     const int pcols = P_aug.cols();
     const double r3 = sqrt(lambda_ + n_aug_);
@@ -169,7 +174,7 @@ void UKF::Prediction(double delta_t)
     }
 
     // predict sigma points
-    const double eeps = 1e-6;
+    const double eeps = 1e-5;
     for(int i = 0; i < Xsig_aug.cols(); ++i)
     {
         const VectorXd x = Xsig_aug.col(i);
@@ -200,27 +205,29 @@ void UKF::Prediction(double delta_t)
             xd(3) = (x(4) * delta_t) + 0.5 * dt2 * x(6);
             xd(4) = delta_t * x(6);
         }
+
         //write predicted sigma points into right column
         VectorXd Xsig = x.head(5) + xd;
-
-        //angle normalization
-        //while (Xsig(3)> M_PI) Xsig(3)-=2.*M_PI;
-        //while (Xsig(3)<-M_PI) Xsig(3)+=2.*M_PI;
+        Xsig(3) = atan2(sin(Xsig(3)), cos(Xsig(3))); // elegant but expensive way to ensure angle is in [-pi,pi]
 
         Xsig_pred_.col(i) = Xsig;
     }
 
     // predict mean and covariance
+    x_.fill(0);
     for(int i = 0; i < n_sigma; ++i)
     {
         x_ += weights_(i) * Xsig_pred_.col(i);
     }
+    x_(3) = atan2(sin(x_(3)), cos(x_(3))); // elegant but expensive way to ensure angle is in [-pi,pi]
+    P_.fill(0);
     for(int i = 0; i < n_sigma; ++i)
     {
-        P_ += weights_(i) * (Xsig_pred_.col(i) - x_) * (Xsig_pred_.col(i) - x_).transpose();
+        VectorXd xDiff = Xsig_pred_.col(i) - x_;
+        P_ += weights_(i) * xDiff * xDiff.transpose();
     }
 
-    std::cout << "[Prediction] " << x_.transpose() << std::endl;
+    std::cout << "[PredictionX] " << x_.transpose() << std::endl;
     //std::cout << "[Prediction] " << P_ << std::endl;
 }
 
@@ -282,11 +289,7 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
     for(int i = 0; i < n_sigma; ++i)
     {
         VectorXd zd = Zsig.col(i) - z_pred;
-
-        //angle normalization
-        while (zd(1)> M_PI) zd(1)-=2.*M_PI;
-        while (zd(1)<-M_PI) zd(1)+=2.*M_PI;
-
+        zd(1) = atan2(sin(zd(1)), cos(zd(1))); // elegant but expensive way to ensure angle is in [-pi,pi]
         z_delta.col(i) = zd;
     }
 
@@ -306,10 +309,7 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
     {
         // state difference
         VectorXd x_diff = Xsig_pred_.col(i) - x_;
-
-        //angle normalization
-        while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-        while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
+        x_diff(3) = atan2(sin(x_diff(3)), cos(x_diff(3))); // elegant but expensive way to ensure angle is in [-pi,pi]
 
         Tc += weights_(i) * x_diff * z_delta.col(i).transpose();
     }
@@ -320,13 +320,11 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
 
     // compute innovation
     VectorXd innovation = meas_package.raw_measurements_ - z_pred;
-
-    //angle normalization
-    while (innovation(1)> M_PI) innovation(1)-=2.*M_PI;
-    while (innovation(1)<-M_PI) innovation(1)+=2.*M_PI;
+    innovation(1) = atan2(sin(innovation(1)), cos(innovation(1))); // elegant but expensive way to ensure angle is in [-pi,pi]
 
     //update state mean and covariance matrix
     x_ += K * innovation;
+    x_(3) = atan2(sin(x_(3)), cos(x_(3))); // elegant but expensive way to ensure angle is in [-pi,pi]
     P_ -= K * S * K.transpose();
 
     // compute nis
