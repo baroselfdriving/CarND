@@ -117,7 +117,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     const double dt = (meas_package.timestamp_ - time_us_) / 1000000.0;	//dt - expressed in seconds
     time_us_ = meas_package.timestamp_;
     Prediction(dt);
-
+/*
     // update
     if( meas_package.sensor_type_ == MeasurementPackage::RADAR )
     {
@@ -126,7 +126,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER )
     {
         UpdateLidar(meas_package);
-    }
+    }*/
 }
 
 /**
@@ -204,8 +204,8 @@ void UKF::Prediction(double delta_t)
         VectorXd Xsig = x.head(5) + xd;
 
         //angle normalization
-        while (Xsig(3)> M_PI) Xsig(3)-=2.*M_PI;
-        while (Xsig(3)<-M_PI) Xsig(3)+=2.*M_PI;
+        //while (Xsig(3)> M_PI) Xsig(3)-=2.*M_PI;
+        //while (Xsig(3)<-M_PI) Xsig(3)+=2.*M_PI;
 
         Xsig_pred_.col(i) = Xsig;
     }
@@ -219,6 +219,9 @@ void UKF::Prediction(double delta_t)
     {
         P_ += weights_(i) * (Xsig_pred_.col(i) - x_) * (Xsig_pred_.col(i) - x_).transpose();
     }
+
+    std::cout << "[Prediction] " << x_.transpose() << std::endl;
+    //std::cout << "[Prediction] " << P_ << std::endl;
 }
 
 /**
