@@ -132,8 +132,6 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     {
         UpdateLidar(meas_package);
     }
-
-    std::cout << 7.815 << "," << NIS_radar_ << "," << NIS_laser_ << std::endl;
 }
 
 /**
