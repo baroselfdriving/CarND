@@ -15,6 +15,12 @@ class UKF
 {
 public:
 
+  ///* State dimension
+  const int NUM_STATES_;
+
+  ///* Augmented state dimension
+  const int NUM_AUG_STATES_;
+
   ///* initially set to false, set to true in first call of ProcessMeasurement
   bool isInitialized_;
 
@@ -31,7 +37,7 @@ public:
   MatrixXd P_;
 
   ///* predicted sigma points matrix
-  MatrixXd Xsig_pred_;
+  MatrixXd xSigPred_;
 
   ///* time when the state is true, in us
   long long time_us_;
@@ -59,12 +65,6 @@ public:
 
   ///* Weights of sigma points
   VectorXd weights_;
-
-  ///* State dimension
-  int n_x_;
-
-  ///* Augmented state dimension
-  int n_aug_;
 
   ///* Sigma point spreading parameter
   double lambda_;
