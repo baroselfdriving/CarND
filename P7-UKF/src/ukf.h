@@ -21,6 +21,9 @@ public:
   ///* Augmented state dimension
   const int NUM_AUG_STATES_;
 
+  ///* number of sigma points used
+  const int NUM_SIG_PTS_;
+
   ///* initially set to false, set to true in first call of ProcessMeasurement
   bool isInitialized_;
 
