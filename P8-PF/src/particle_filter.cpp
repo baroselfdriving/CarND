@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <iterator>
+#include <random>
 
 #include "particle_filter.h"
 
@@ -25,6 +26,26 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
+    // create random distribution centered around initial position. Assume std[] has length = 3
+    default_random_engine rand_gen;
+    normal_distribution<double> distrib_x(x, std[0]);
+    normal_distribution<double> distrib_y(y, std[1]);
+    normal_distribution<double> distrib_theta(theta, std[2]);
+
+    num_particles = 1000;
+    particles = std::vector<Particle>(num_particles);
+    int id = 0;
+    for(auto& particle : particles)
+    {
+        particle.id = id;
+        id++;
+        particle.x = distrib_x(rand_gen);
+        particle.y = distrib_y(rand_gen);
+        particle.theta = distrib_theta(rand_gen);
+        particle.weight = 1;
+    }
+    is_initialized = true;
+
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -32,6 +53,39 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
+
+    // For motion noise, create random distribution centered around 0. Assume std_pos[] has length = 3
+    default_random_engine rand_gen;
+    normal_distribution<double> distrib_x(0, std_pos[0]);
+    normal_distribution<double> distrib_y(0, std_pos[1]);
+    normal_distribution<double> distrib_theta(0, std_pos[2]);
+
+    // propagate motion
+    const double EEPS = 1e-6;
+    for(auto& particle : particles)
+    {
+        //avoid division by zero
+        if(yaw_rate < EEPS)
+        {
+            particle.x += cos(particle.theta) * delta_t * velocity;
+            particle.y += sin(particle.theta) * delta_t * velocity;
+            particle.theta += yaw_rate * delta_t;
+        }
+        else
+        {
+            const double vt = velocity/yaw_rate;
+            const double cp = cos(particle.theta);
+            const double sp = sin(particle.theta);
+            particle.theta += yaw_rate * delta_t;
+            particle.x += vt * (sin(particle.theta) - sp);
+            particle.y += vt * (-cos(particle.theta) + cp);
+        }
+
+        // add motion noise
+        particle.x += distrib_x(rand_gen);
+        particle.y += distrib_y(rand_gen);
+        particle.theta += distrib_theta(rand_gen);
+    }
 
 }
 
@@ -55,6 +109,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+
+
 }
 
 void ParticleFilter::resample() {
