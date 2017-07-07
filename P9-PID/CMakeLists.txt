@@ -8,7 +8,6 @@ set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 set(HDRS
     src/RollingMean.h
-    src/Controller.h
     src/PID.h
     )
 set(SRC
