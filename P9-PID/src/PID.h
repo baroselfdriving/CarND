@@ -16,8 +16,9 @@ public:
     /*
      * Twiddle components
      */
-    RollingMean     _errorAcc; // mean squared error accumulator
-    unsigned int    _numErrorSamples;
+    RollingMean          _errorAcc; // mean squared error accumulator
+    unsigned int         _numErrorSamples;
+    std::array<double,3> _deltaGain;
 
 
   /*

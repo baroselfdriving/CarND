@@ -33,7 +33,8 @@ int main()
   uWS::Hub h;
 
   PID pid;
-  pid.Init(.15, 0.001, 1); ///!Initalise PID controller
+//  pid.Init(.15, 0.001, 1); ///!Initalise PID controller
+  pid.Init(.1, 0.001, 1); ///!Initalise PID controller
   pid.SetNumTwiddleEvalSamples(50); ///! set to auto tune after evaluating these many samples
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
@@ -59,6 +60,7 @@ int main()
           * another PID controller to control the speed!
           */
           pid.TwiddleError(cte); ///Do the control
+          //pid.UpdateError(cte); ///Do the control
           steer_value = pid.TotalError();
           if(steer_value > 1) steer_value = 1.0;
           if(steer_value < -1) steer_value = -1.0;
@@ -68,7 +70,7 @@ int main()
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = 0.3; //was .3
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           //std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
