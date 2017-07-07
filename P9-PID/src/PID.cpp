@@ -6,28 +6,38 @@ using namespace std;
 * TODO: Complete the PID class.
 */
 
-PID::PID() : Kp(0), Ki(0), Kd(0){}
+PID::PID() {}
 
 PID::~PID() {}
 
 void PID::Init(double Kp, double Ki, double Kd) {
-    this->Kp = Kp;
-    this->Kd = Kd;
-    this->Ki = Ki;
-
+    _pControl.Init(Kp);
+    _dControl.Init(Kd);
+    _iControl.Init(Ki);
 }
 
 void PID::UpdateError(double cte) {
-    static double lastCte = cte;
-    static double sumCte = 0;
-    p_error = -Kp * cte;
-    i_error = -Ki * sumCte;
-    d_error = -Kd * (cte - lastCte);
-    lastCte = cte;
-    sumCte += cte;
+    _pControl.UpdateError(cte);
+    _dControl.UpdateError(cte);
+    _iControl.UpdateError(cte);
+}
+
+void PID::SetNumTwiddleEvalSamples(unsigned int nEvalSamples)
+{
+   _pControl.SetNumTwiddleEvalSamples(nEvalSamples);
+   _iControl.SetNumTwiddleEvalSamples(nEvalSamples);
+   _dControl.SetNumTwiddleEvalSamples(nEvalSamples);
+}
+
+void PID::TwiddleError(double cte) {
+    _pControl.TwiddleError(cte);
+    _dControl.TwiddleError(cte);
+    _iControl.TwiddleError(cte);
 }
 
 double PID::TotalError() {
-    return p_error + i_error + d_error;
+    return _pControl.TotalError()
+            + _iControl.TotalError()
+            + _dControl.TotalError();
 }
 
