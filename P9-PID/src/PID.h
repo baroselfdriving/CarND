@@ -1,21 +1,25 @@
 #ifndef PID_H
 #define PID_H
 
+#include "RollingMean.h"
+#include <array>
+
 class PID {
 public:
-  /*
-  * Errors
-  */
-  double p_error;
-  double i_error;
-  double d_error;
 
-  /*
-  * Coefficients
-  */ 
-  double Kp;
-  double Ki;
-  double Kd;
+    /*
+     * PID terms
+     */
+    std::array<double,3> _gain;
+    double _error;
+
+    /*
+     * Twiddle components
+     */
+    RollingMean          _errorAcc; // mean squared error accumulator
+    unsigned int         _numErrorSamples;
+    std::array<double,3> _deltaGain;
+
 
   /*
   * Constructor
@@ -25,7 +29,7 @@ public:
   /*
   * Destructor.
   */
-  virtual ~PID();
+  virtual ~PID() = default;
 
   /*
   * Initialize PID.
@@ -38,9 +42,19 @@ public:
   void UpdateError(double cte);
 
   /*
+   * Set twiddle parameters
+   */
+  void SetNumTwiddleEvalSamples(unsigned int nEvalSamples) { _numErrorSamples = nEvalSamples; }
+
+  /*
+  * Autotune PID controller using twiddle algorithm.
+  */
+  void TwiddleError(double cte);
+
+  /*
   * Calculate the total PID error.
   */
-  double TotalError();
+  double TotalError() { return _error; }
 };
 
 #endif /* PID_H */

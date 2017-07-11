@@ -6,8 +6,14 @@ add_definitions(-std=c++11)
 
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
-
-set(sources src/PID.cpp src/main.cpp)
+set(HDRS
+    src/RollingMean.h
+    src/PID.h
+    )
+set(SRC
+    src/PID.cpp
+    src/main.cpp
+    )
 
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
@@ -21,6 +27,6 @@ link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
 
-add_executable(pid ${sources} ${CMAKE_SOURCE_DIR}/README.md)
+add_executable(pid ${SRC} ${HDRS} ${CMAKE_SOURCE_DIR}/README.md)
 
 target_link_libraries(pid z ssl uv uWS)
