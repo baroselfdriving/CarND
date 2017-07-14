@@ -10,9 +10,11 @@ namespace plt = matplotlibcpp;
 
 using CppAD::AD;
 
-// TODO: Set N and dt
+// We set the number of timesteps to 25
+// and the timestep evaluation frequency or evaluation
+// period to 0.05.
 size_t N = 25;
-double dt = .05;
+double dt = 0.05;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -26,8 +28,8 @@ double dt = .05;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-// NOTE: feel free to play around with this
-// or do something completely different
+// Both the reference cross track and orientation errors are 0.
+// The reference velocity is set to 40 mph.
 double ref_v = 40;
 
 // The solver takes all the state variables and actuator
@@ -56,9 +58,24 @@ class FG_eval {
     // Any additions to the cost should be added to `fg[0]`.
     fg[0] = 0;
 
-    // Reference State Cost
-    // TODO: Define the cost related the reference state and
-    // any anything you think may be beneficial.
+    // The part of the cost based on the reference state.
+    for (int t = 0; t < N; t++) {
+      fg[0] += CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+    }
+
+    // Minimize the use of actuators.
+    for (int t = 0; t < N - 1; t++) {
+      fg[0] += CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t], 2);
+    }
+
+    // Minimize the value gap between sequential actuations.
+    for (int t = 0; t < N - 2; t++) {
+      fg[0] += 100*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+    }
 
     //
     // Setup Constraints
@@ -79,7 +96,7 @@ class FG_eval {
 
     // The rest of the constraints
     for (int t = 1; t < N; t++) {
-      // state at time t+1
+      // The state at time t+1 .
       AD<double> x1 = vars[x_start + t];
       AD<double> y1 = vars[y_start + t];
       AD<double> psi1 = vars[psi_start + t];
@@ -87,7 +104,7 @@ class FG_eval {
       AD<double> cte1 = vars[cte_start + t];
       AD<double> epsi1 = vars[epsi_start + t];
 
-      // state at time t
+      // The state at time t.
       AD<double> x0 = vars[x_start + t - 1];
       AD<double> y0 = vars[y_start + t - 1];
       AD<double> psi0 = vars[psi_start + t - 1];
@@ -286,7 +303,8 @@ int main() {
   ptsx << -100, 100;
   ptsy << -1, -1;
 
-  // TODO: fit a polynomial to the above x and y coordinates
+  // The polynomial is fitted to a straight line so a polynomial with
+  // order 1 is sufficient.
   auto coeffs = polyfit(ptsx, ptsy, 1);
 
   // NOTE: free feel to play around with these
@@ -294,10 +312,11 @@ int main() {
   double y = 10;
   double psi = 0;
   double v = 10;
-
-  // TODO: calculate the cross track error
+  // The cross track error is calculated by evaluating at polynomial at x, f(x)
+  // and subtracting y.
   double cte = polyeval(coeffs, x) - y;
-  // TODO: calculate the orientation error
+  // Due to the sign starting at 0, the orientation error is -f'(x).
+  // derivative of coeffs[0] + coeffs[1] * x -> coeffs[1]
   double epsi = psi - atan(coeffs[1]);
 
   Eigen::VectorXd state(6);
