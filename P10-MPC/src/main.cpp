@@ -70,8 +70,9 @@ int main() {
 
   // MPC is initialized here!
   MPC mpc;
+  int nIterations = 1; /// \todo: Number of iterations to optimise over. set this
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc,nIterations](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -92,27 +93,67 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          double steer_value;
-          double throttle_value;
+          // fit a 3rd degree polynomial for desired trajectory
+          const int polyOrder = 3;
+          Eigen::VectorXd xPts(ptsx.size()); // assuming ptsx and ptsy are same size
+          Eigen::VectorXd yPts(ptsy.size());
+          for(unsigned int i = 0; i < ptsx.size(); ++i)
+          {
+              xPts[i] = ptsx[i];
+              yPts[i] = ptsy[i];
+          }
+          auto curveCoeffs = polyfit(xPts, yPts, polyOrder);
+
+          // The cross track error:
+          double cte = polyeval(curveCoeffs, px) - py;
+
+          // for orientation error, first compute derivative:
+          double df0 = 0;
+          const int nCoeffs = curveCoeffs.size();
+          for(int i = 0; i < nCoeffs; ++i)
+          {
+              df0 += i * curveCoeffs[i] * pow(px, i-1);
+          }
+          // and then the orientation error
+          double epsi = psi - atan(df0);
+
+          // MPC optimisation iterations
+          Eigen::VectorXd state(6);
+          double steer_value = 0;
+          double throttle_value = 0;
+          MPC::output out;
+          state << px, py, psi, v, cte, epsi;
+          for(int i = 0; i < nIterations; ++i)
+          {
+              out = mpc.Solve(state, curveCoeffs);
+
+              // setup for next iteration
+              state << out.x[0], out.y[0], out.psi[0], out.v[0], out.cte[0], out.epsi[0];
+              steer_value = out.delta[0];
+              throttle_value = out.a[0];
+          }
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = steer_value/deg2rad(25);
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Green line
+          const double ct = cos(psi);
+          const double st = sin(psi);
+
+          /// \todo add MPC predicted waypoint - these are in the vehicle's coordinate frame
+          for(unsigned int i = 0; i < out.x.size(); ++i)
+          {
+              const double dx = out.x[i] - px;
+              const double dy = out.y[i] - py;
+              mpc_x_vals.push_back(ct * dx + st * dy);
+              mpc_y_vals.push_back(-st * dx + ct * dy);
+          }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -121,8 +162,14 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Yellow line
+          // add reference waypoints - these are in the vehicle's coordinate frame
+          for(unsigned int i = 0; i < ptsx.size(); ++i)
+          {
+              const double dx = ptsx[i] - px;
+              const double dy = ptsy[i] - py;
+              next_x_vals.push_back(ct * dx + st * dy);
+              next_y_vals.push_back(-st * dx + ct * dy);
+          }
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
@@ -137,9 +184,8 @@ int main() {
           // Feel free to play around with this value but should be to drive
           // around the track with 100ms latency.
           //
-          // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
-          // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          ///\todo NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
+          //this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
