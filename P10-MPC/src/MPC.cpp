@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // hyperparameters
-const size_t N = 10; // compute for these many steps in the future
-const double dt = 0.1; // where each step is this many seconds
+const size_t N = 20; // compute for these many steps in the future
+const double dt = 0.05; // where each step is this many seconds
 const double ref_v = 80; // reference velocity in simulator units
 
 // This value assumes the model presented in the classroom is used.
@@ -55,9 +55,9 @@ class FG_eval
       ///--------------------------------------------------------------
 
       // penalty factors deviation from referene
-      const double errorPenalty = 2000;
-      const double actuationPenalty = 100;
-      const double steeringChangePenality = 50;
+      const double errorPenalty = .01;
+      const double actuationPenalty = 50;
+      const double steeringChangePenality = 1000;
       const double accelerationChangePenalty = 10;
 
       for (unsigned int t = 0; t < N; t++)
@@ -120,10 +120,10 @@ class FG_eval
 
           /// Given actuation delay of 100ms, we must act on actuator
           /// signals from 100ms ago
-          if( t > 1)
+          if( t > 2)
           {
-              delta0 = vars[delta_start + t - 2];
-              a0 = vars[a_start + t - 2];
+              delta0 = vars[delta_start + t - 3];
+              a0 = vars[a_start + t - 3];
           }
 
           // the desired trajectory: find the order of the curve and then
