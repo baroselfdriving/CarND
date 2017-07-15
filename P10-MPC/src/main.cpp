@@ -70,21 +70,22 @@ int main() {
 
   // MPC is initialized here!
   MPC mpc;
-  int nIterations = 1; /// \todo: Number of iterations to optimise over. set this
 
-  h.onMessage([&mpc,nIterations](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
-      if (s != "") {
+      if (s != "")
+      {
         auto j = json::parse(s);
         string event = j[0].get<string>();
-        if (event == "telemetry") {
+        if (event == "telemetry")
+        {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
@@ -93,90 +94,51 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          // fit a 3rd degree polynomial for desired trajectory
-          const int polyOrder = 3;
+          // Convert waypoints to car frame
           Eigen::VectorXd xPts(ptsx.size()); // assuming ptsx and ptsy are same size
           Eigen::VectorXd yPts(ptsy.size());
-          for(unsigned int i = 0; i < ptsx.size(); ++i)
-          {
-              xPts[i] = ptsx[i];
-              yPts[i] = ptsy[i];
-          }
-          auto curveCoeffs = polyfit(xPts, yPts, polyOrder);
-
-          // The cross track error:
-          double cte = polyeval(curveCoeffs, px) - py;
-
-          // for orientation error, first compute derivative:
-          double df0 = 0;
-          const int nCoeffs = curveCoeffs.size();
-          for(int i = 0; i < nCoeffs; ++i)
-          {
-              df0 += i * curveCoeffs[i] * pow(px, i-1);
-          }
-          // and then the orientation error
-          double epsi = psi - atan(df0);
-
-          // MPC optimisation iterations
-          Eigen::VectorXd state(6);
-          double steer_value = 0;
-          double throttle_value = 0;
-          MPC::output out;
-          state << px, py, psi, v, cte, epsi;
-          for(int i = 0; i < nIterations; ++i)
-          {
-              out = mpc.Solve(state, curveCoeffs);
-
-              // setup for next iteration
-              state << out.x[0], out.y[0], out.psi[0], out.v[0], out.cte[0], out.epsi[0];
-              steer_value = out.delta[0];
-              throttle_value = out.a[0];
-          }
-
-          json msgJson;
-          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
-          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value/deg2rad(25);
-          msgJson["throttle"] = throttle_value;
-
-          //Display the MPC predicted trajectory 
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
-
           const double ct = cos(psi);
           const double st = sin(psi);
-
-          /// \todo add MPC predicted waypoint - these are in the vehicle's coordinate frame
-          for(unsigned int i = 0; i < out.x.size(); ++i)
-          {
-              const double dx = out.x[i] - px;
-              const double dy = out.y[i] - py;
-              mpc_x_vals.push_back(ct * dx + st * dy);
-              mpc_y_vals.push_back(-st * dx + ct * dy);
-          }
-
-          msgJson["mpc_x"] = mpc_x_vals;
-          msgJson["mpc_y"] = mpc_y_vals;
-
-          //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-
-          // add reference waypoints - these are in the vehicle's coordinate frame
           for(unsigned int i = 0; i < ptsx.size(); ++i)
           {
               const double dx = ptsx[i] - px;
               const double dy = ptsy[i] - py;
-              next_x_vals.push_back(ct * dx + st * dy);
-              next_y_vals.push_back(-st * dx + ct * dy);
+              xPts[i] = ct * dx + st * dy;
+              yPts[i] = -st * dx + ct * dy;
           }
 
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
+          // fit a 3rd degree polynomial for desired trajectory
+          const int polyOrder = 3;
+          auto curveCoeffs = polyfit(xPts, yPts, polyOrder);
 
+          // The cross track and orientation errors:
+          double cte = polyeval(curveCoeffs, 0); // px = py = 0;
+          double epsi = -atan(curveCoeffs[1]); // higher order terms are zero
+
+          // MPC optimisation step
+          Eigen::VectorXd state(6);
+          state << 0, 0, 0, v, cte, epsi; // current state - pose is at origin
+          MPC::Output out = mpc.Solve(state, curveCoeffs);
+
+          // Reference waypoints for display (in vehicle frame)
+          vector<double> next_x_vals(xPts.size());
+          vector<double> next_y_vals(xPts.size());
+          for(unsigned int i = 0; i < xPts.size(); ++i)
+          {
+              next_x_vals[i] = xPts[i];
+              next_y_vals[i] = yPts[i];
+          }
+
+          json msgJson;
+          msgJson["mpc_x"] = out.x;  // MPC predicted waypoints in the vehicle's coordinate frame
+          msgJson["mpc_y"] = out.y;
+          msgJson["next_x"] = next_x_vals; // reference waypoints in vehicle coordinate frame
+          msgJson["next_y"] = next_y_vals;
+          msgJson["steering_angle"] = -out.delta[0]/deg2rad(25); /// scale and invert to match simulator convention
+          msgJson["throttle"] = out.a[0];
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -184,8 +146,8 @@ int main() {
           // Feel free to play around with this value but should be to drive
           // around the track with 100ms latency.
           //
-          ///\todo NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
-          //this_thread::sleep_for(chrono::milliseconds(100));
+          //\todo NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

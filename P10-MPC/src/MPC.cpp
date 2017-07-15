@@ -5,9 +5,10 @@
 
 using CppAD::AD;
 
-/// \TODO: Set the timestep length and duration
-size_t N = 10;
-double dt = 0.1;
+// hyperparameters
+const size_t N = 10; // compute for these many steps in the future
+const double dt = 0.1; // where each step is this many seconds
+const double ref_v = 80; // reference velocity in simulator units
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,8 +22,6 @@ double dt = 0.1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-/// \todo: set ref_v that is sensible
-double ref_v = 70; // note: this is in mph
 // The solver takes all the state variables and actuator
 
 // variables in a singular vector. Thus, we should to establish
@@ -54,17 +53,17 @@ class FG_eval
       ///--------------------------------------------------------------
       /// compute the cost
       ///--------------------------------------------------------------
-      /// \todo: set these
-      const double errorPenalty = 3000;
-      const double actuationPenalty = 5;
-      const double steeringChangePenality = 200;
+
+      // penalty factors deviation from referene
+      const double errorPenalty = 2000;
+      const double actuationPenalty = 100;
+      const double steeringChangePenality = 50;
       const double accelerationChangePenalty = 10;
+
       for (unsigned int t = 0; t < N; t++)
       {
-          // penalise cross track error
+          // penalise cross track and orientation error
           fg[0] += errorPenalty * CppAD::pow(vars[cte_start + t], 2);
-
-          // penalise orientation error
           fg[0] += errorPenalty * CppAD::pow(vars[epsi_start + t], 2);
 
           // penalise difference from reference velocity
@@ -77,14 +76,13 @@ class FG_eval
             fg[0] += actuationPenalty * CppAD::pow(vars[a_start + t], 2);
           }
 
-          // penalise large step changes in actuation
+          // penalise magnitude of step changes in actuation
           if(t < N - 2)
           {
             fg[0] += steeringChangePenality * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
             fg[0] += accelerationChangePenalty * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
           }
       }
-
 
       ///--------------------------------------------------------------
       /// Setup Constraints
@@ -117,10 +115,16 @@ class FG_eval
           AD<double> cte0 = vars[cte_start + t - 1];
           AD<double> epsi0 = vars[epsi_start + t - 1];
 
-          // Only consider the actuation at time t.
-          /// \todo: select actuation to accout for latency
           AD<double> delta0 = vars[delta_start + t - 1];
           AD<double> a0 = vars[a_start + t - 1];
+
+          /// Given actuation delay of 100ms, we must act on actuator
+          /// signals from 100ms ago
+          if( t > 1)
+          {
+              delta0 = vars[delta_start + t - 2];
+              a0 = vars[a_start + t - 2];
+          }
 
           // the desired trajectory: find the order of the curve and then
           // compute the cross track position and derivative
@@ -147,14 +151,6 @@ class FG_eval
           fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
           fg[1 + cte_start + t] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
           fg[1 + epsi_start + t] = epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
-/*
-          std::cout << " T: " << t << " f0: " << f0 << " df0: " << df0 << " fg: "
-                  << fg[1 + x_start + t] << " "
-                  << fg[1 + y_start + t] << " "
-                  << fg[1 + psi_start + t] << " "
-                  << fg[1 + v_start + t] << " "
-                  << fg[1 + cte_start + t] << " "
-                  << fg[1 + epsi_start + t] << std::endl;*/
       } // constraints
   }
 };
@@ -165,7 +161,7 @@ class FG_eval
 MPC::MPC() {}
 MPC::~MPC() {}
 
-MPC::output MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
+MPC::Output MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 {
   bool ok = true;
   typedef CPPAD_TESTVECTOR(double) Dvector;
@@ -281,12 +277,7 @@ MPC::output MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 
   // Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
-  MPC::output out = MPC::output{
-          Eigen::VectorXd(N-1), Eigen::VectorXd(N-1), Eigen::VectorXd(N-1), Eigen::VectorXd(N-1),
-          Eigen::VectorXd(N-1), Eigen::VectorXd(N-1), Eigen::VectorXd(N-1), Eigen::VectorXd(N-1)};
-
-  /// \todo: curve fit on predicted x and y rather than output these?
-
+  MPC::Output out(N-1);
   for(unsigned int t = 0; t < N-1; ++t)
   {
       out.x[t] = solution.x[x_start + t + 1];
@@ -300,3 +291,5 @@ MPC::output MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   }
   return out;
 }
+
+
