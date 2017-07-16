@@ -81,46 +81,324 @@ This is a description of my implementation of Project 10, Model Predictive
  Control in the Self Driving Car Engineer Nanodegree.
 \end_layout
 
-\begin_layout Section
+\begin_layout Section*
+Introduction
+\end_layout
+
+\begin_layout Standard
+This was a challenging, but personally speaking the most enjoyable assignment
+ in Term 2 of this course (the Particle Filter comes a close second).
+ Udacity provided the a basic template in which to implement the coding
+ assignment.
+ The following sections describe the bits we had to implement, as required
+ by the rubric.
+\end_layout
+
+\begin_layout Section*
 Model
 \end_layout
 
-\begin_layout Standard
-Student describes their model in detail.
- This includes the state, actuators and update equations.
-\end_layout
-
-\begin_layout Section
-Timestep Length and Elapsed Duration (N & dt)
+\begin_layout Subsection*
+Vehicle Motion Model
 \end_layout
 
 \begin_layout Standard
-Student discusses the reasoning behind the chosen N (timestep length) and
- dt (elapsed duration between timesteps) values.
- Additionally the student details the previous values tried.
+The vehicle state vector is 
+\begin_inset Formula $\left[\begin{array}{cccccc}
+x & y & \psi & v & e^{cte} & e^{\psi}\end{array}\right]^{T}\in\mathbb{R}^{6}$
+\end_inset
+
+, constituted by planar position, orientation, linear velocity, cross track
+ error and orientation error, respectively.
+ For every time step 
+\begin_inset Formula $\Delta T$
+\end_inset
+
+, the evolution of state is governed by the following kinematic model
 \end_layout
 
-\begin_layout Section
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+x_{t+1} & = & x_{t}+v_{t}\cos(\psi_{t})\Delta T\\
+y_{t+1} & = & y_{t}+v_{t}\sin(\psi_{t})\Delta T\\
+\psi_{t+1} & = & \psi_{t}+\frac{v_{t}}{L_{f}}\delta_{t}\Delta T\\
+v_{t+1} & = & v_{t}+a_{t}\Delta T\\
+e_{t+1}^{cte} & = & \left(y_{t}-y_{t}^{des}\right)+v_{t}\sin(e_{t}^{\psi})\Delta T\\
+e_{t+1}^{\psi} & = & \left(\psi_{t}-\psi_{t}^{des}\right)+\frac{v_{t}}{L_{f}}\delta_{t}\Delta T
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $L_{f}$
+\end_inset
+
+ is a constant design parameter representing the distance from the front
+ of the vehicle to its CoG, 
+\begin_inset Formula $y_{t}^{des}(t)$
+\end_inset
+
+ is the desired lateral position of the vehicle such that 
+\begin_inset Formula $\left(y_{t}-y_{t}^{des}\right)$
+\end_inset
+
+ represents the cross track error at time 
+\begin_inset Formula $t$
+\end_inset
+
+, 
+\begin_inset Formula $\psi_{t}^{des}(t)$
+\end_inset
+
+ is the desired orientation of the vehicle, 
+\begin_inset Formula $\delta_{t}(t)$
+\end_inset
+
+ represents the steering angle and 
+\begin_inset Formula $a_{t}(t)$
+\end_inset
+
+ is the throttle.
+ Both 
+\begin_inset Formula $y_{t}^{des}(t)$
+\end_inset
+
+ and 
+\begin_inset Formula $\psi_{t}^{des}$
+\end_inset
+
+ come from the reference trajectory that the vehicle is expected to follow.
+ How this trajectory is generated is described in a following section.
+ 
+\end_layout
+
+\begin_layout Subsection*
+Actuator Constraints
+\end_layout
+
+\begin_layout Standard
+The control inputs to the vehicle are steering angle 
+\begin_inset Formula $\delta\in\left[-|\delta_{max}|,|\delta_{max}|\right]$
+\end_inset
+
+ and a trottle value 
+\begin_inset Formula $a\in\left[-1,1\right]$
+\end_inset
+
+ where I chose 
+\begin_inset Formula $\delta_{max}=25$
+\end_inset
+
+ degrees.
+ The controller generates new steering and trottle commands subject to the
+ limiting contraints of the range of actuation defined above and the minimisatio
+n of a cost function described in a later section.
+\end_layout
+
+\begin_layout Section*
+MPC Prediction Horizon
+\end_layout
+
+\begin_layout Standard
+I experimented with a few prediction horizons and eventually settled on
+ a value of 1 second into the future.
+ Any shorther and the controller wasn't able to look sufficiently far ahead
+ to generate optimal control inputs that would pull the vehicle back on
+ the desired trajectory at high speed, given the curviness of the simulated
+ race track.
+ On the other hand, longer horizons generated highly erroneous predictions
+ perhaps due to the approximate nature of the vehicle model that ignored
+ complex vehicle and actuator dynamics.
+ 
+\end_layout
+
+\begin_layout Standard
+Once the prediction horizon was selected, the next step was to decide on
+ the number of timesteps 
+\begin_inset Formula $N$
+\end_inset
+
+ and length of each timestep 
+\begin_inset Formula $\Delta T$
+\end_inset
+
+.
+ Here, I chose the smallest 
+\begin_inset Formula $N$
+\end_inset
+
+ or conversely the largest 
+\begin_inset Formula $\Delta T$
+\end_inset
+
+ I could get away with, as the computational cost increased in proportion
+ to 
+\begin_inset Formula $N$
+\end_inset
+
+.
+ We were asked to simulate a propagation delay of 100ms in control signals
+ reaching the vehicle actuators.
+ I first tried 
+\begin_inset Formula $N=10$
+\end_inset
+
+ (
+\begin_inset Formula $\Delta T=0.1$
+\end_inset
+
+).
+ This resulted in quite a lot of zigzagging, especially at start.
+ The vehicle able to reach smooth motion after tweaking the scale factors
+ in the cost function but I couldn't really make the vehicle exceed an average
+ speed of about 50 mph safely.
+ Setting 
+\begin_inset Formula $N=20$
+\end_inset
+
+ (
+\begin_inset Formula $\Delta T=0.05$
+\end_inset
+
+) smoothed out the predictions considerably, and the vehicle could now go
+ much faster at about 65 mph given the better resolution of control.
+ So thats what I chose - the lowest possible control resolution at which
+ I could go sufficiently fast around the bends to be considered suicidal
+ in the real world.
+\end_layout
+
+\begin_layout Section*
 Polynomial Fitting and MPC Preprocessing
 \end_layout
 
 \begin_layout Standard
-A polynomial is fitted to waypoints.
+As mentioned previously, the desired trajectory was provided.
+ This was in the form of waypoints, and a third order polynomial fit provided
+ a sufficiently smooth trajectory for the vehicle to follow.
+ The curve-fit function 
+\begin_inset Formula $f(x)$
+\end_inset
+
+ provided a rather nice analytical way to compute the desired cross track
+ position and orientation terms in the model equations as 
+\begin_inset Formula $y^{des}=f(x)$
+\end_inset
+
+ and 
+\begin_inset Formula $\psi^{des}=\tan^{-1}(\frac{df(x)}{dt})$
+\end_inset
+
+ as follows
+\begin_inset Formula 
+\begin{eqnarray*}
+y^{des} & = & a_{0}+a_{1}x+a_{2}x^{2}+a_{3}x^{3}\\
+\psi^{des} & = & \tan^{-1}(a_{1}+2a_{2}x+3a_{3}x^{2}).
+\end{eqnarray*}
+
+\end_inset
+
+The waypoints defining the desired trajectory was first transformed to vehicle
+ coordinates at every timestep as this simplified the computations significantly
+ (the `current' 
+\begin_inset Formula $x$
+\end_inset
+
+,
+\begin_inset Formula $y$
+\end_inset
+
+,
+\begin_inset Formula $\psi$
+\end_inset
+
+ would reduce to 0 at the start of the optimisation timestep).
 \end_layout
 
-\begin_layout Standard
-If the student preprocesses waypoints, the vehicle state, and/or actuators
- prior to the MPC procedure it is described.
-\end_layout
-
-\begin_layout Section
+\begin_layout Section*
 Model Predictive Control with Latency
 \end_layout
 
 \begin_layout Standard
-The student implements Model Predictive Control that handles a 100 millisecond
- latency.
- Student provides details on how they deal with latency.
+The optimiser was setup with the vehicle model and actuator constraints
+ as described previously, and programmed to minimise a cost function that
+ penalised the cross track error, the orientation error, deviation from
+ a reference velocity set to 80 mph, magnitude of actuation signals and
+ magnitude of change in actuation signals.
+ The relative `penalties' were as follows
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+const double errorPenalty = 0.01; 
+\end_layout
+
+\begin_layout Plain Layout
+
+const double actuationPenalty = 25; 
+\end_layout
+
+\begin_layout Plain Layout
+
+const double steeringChangePenality = 1000.0; 
+\end_layout
+
+\begin_layout Plain Layout
+
+const double accelerationChangePenalty = 10.0;
+\end_layout
+
+\end_inset
+
+To handle the communication latency of 100 ms that delayed control commands
+ reaching the actuators, the vehicle model utilised control inputs from
+ 100ms in the past.
+ Since 
+\begin_inset Formula $\Delta T=0.05$
+\end_inset
+
+, this meant using control inputs from 2 timesteps ago rather than the current
+ control inputs to predict where the vehicle would be in the next time step;
+ i.e.
+ the 
+\begin_inset Formula $\delta_{t}$
+\end_inset
+
+ and 
+\begin_inset Formula $a_{t}$
+\end_inset
+
+ terms in the vehicle motion modeling equations were replaced with 
+\begin_inset Formula $\delta_{t-2}$
+\end_inset
+
+and 
+\begin_inset Formula $a_{t-2}$
+\end_inset
+
+, respectively.
+ 
+\end_layout
+
+\begin_layout Section*
+Video
+\end_layout
+
+\begin_layout Standard
+A video of the final output is available at 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://youtu.be/gweVAqsuLU0
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \end_body
