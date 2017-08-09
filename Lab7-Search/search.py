@@ -30,9 +30,9 @@ def search(grid,init,goal,cost):
     # ----------------------------------------
     # modify code below
     # ----------------------------------------
-    closed = [[0 for row in range(len(grid[0]))] for col in range(len(grid))]
-    expand = [[-1 for row in range(len(grid[0]))] for col in range(len(grid))]
-    action = [[-1 for row in range(len(grid[0]))] for col in range(len(grid))]
+    closed = [[0 for col in range(len(grid[0]))] for row in range(len(grid))]
+    expand = [[-1 for col in range(len(grid[0]))] for row in range(len(grid))]
+    action = [[-1 for col in range(len(grid[0]))] for row in range(len(grid))]
 
     closed[init[0]][init[1]] = 1
 
@@ -81,7 +81,7 @@ def search(grid,init,goal,cost):
     for i in range(len(action)):
         print action[i]
 
-    plan = [[' ' for row in range(len(grid[0]))] for col in range(len(grid))]
+    plan = [[' ' for col in range(len(grid[0]))] for row in range(len(grid))]
     x = goal[0]
     y = goal[1]
     plan[x][y] = '*'
