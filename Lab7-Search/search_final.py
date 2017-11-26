@@ -11,9 +11,9 @@
 # ----------
 
 grid = [[0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0],
         [0, 0, 1, 0, 1, 0],
-        [0, 0, 1, 0, 1, 0],
+        [0, 0, 0, 0, 1, 0],
         [0, 0, 1, 0, 1, 0]]
 init = [0, 0]
 goal = [len(grid)-1, len(grid[0])-1]
@@ -49,10 +49,11 @@ def search(grid,init,goal,cost):
     while not found and not resign:
         if len(open) == 0:
             resign = True
+            print 'Fail'
         else:
             open.sort() # sort on g-value
             open.reverse() # pop takes last element. so reverse first then pop
-            next = open.pop()
+            next = open.pop() # get the element with th esmallest g-value
             x = next[1]
             y = next[2]
             g = next[0]
@@ -62,6 +63,7 @@ def search(grid,init,goal,cost):
             
             if x == goal[0] and y == goal[1]:
                 found = True
+                print next
             else:
                 for i in range(len(delta)):
                     x2 = x + delta[i][0]
