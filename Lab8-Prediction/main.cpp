@@ -15,7 +15,7 @@ vector<vector<double> > Load_State(string file_name)
     
     while (getline(in_state_, line)) 
     {
-        istringstream iss(line);
+      istringstream iss(line);
     	vector<double> x_coord;
     	
     	string token;
