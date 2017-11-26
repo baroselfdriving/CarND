@@ -12,14 +12,15 @@ using Eigen::ArrayXd;
 /**
  * Initializes GNB
  */
-GNB::GNB() {
-    left_means = ArrayXd(4);
-	left_means << 0,0,0,0;
-	
-    left_sds = ArrayXd(4);
-    left_sds << 0,0,0,0;
+GNB::GNB()
+{
+  left_means = ArrayXd(4);
+  left_means << 0,0,0,0;
+
+  left_sds = ArrayXd(4);
+  left_sds << 0,0,0,0;
     
-    keep_means = ArrayXd(4);
+  keep_means = ArrayXd(4);
 	keep_means << 0,0,0,0;
 	
 	keep_sds = ArrayXd(4);
@@ -64,44 +65,54 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
 	
     //For each label, compute the numerators of the means for each class
     //and the total number of data points given with that label.
-  for (unsigned int i = 0; i < labels.size(); i++){
-	    if (labels[i] == "left"){
+  for (unsigned int i = 0; i < labels.size(); i++)
+  {
+      if (labels[i] == "left")
+      {
 	        left_means += ArrayXd::Map(data[i].data(), data[i].size());
 	        left_size += 1;
 	    } 
-	    else if (labels[i] == "keep") {
+      else if (labels[i] == "keep")
+      {
 	        keep_means += ArrayXd::Map(data[i].data(), data[i].size());
 	        keep_size += 1;
-	    } else if (labels[i] == "right") {
+      }
+      else if (labels[i] == "right")
+      {
 	        right_means += ArrayXd::Map(data[i].data(), data[i].size());
 	        right_size += 1;
 	    }
 	}
 	
 	//Compute the means. Each result is a ArrayXd of means (4 means, one for each class)..
-	left_means = left_means/left_size;
-    keep_means = keep_means/keep_size;
+  left_means = left_means/left_size;
+  keep_means = keep_means/keep_size;
 	right_means = right_means/right_size;
 
 	//Begin computation of standard deviations for each class/label combination.
 	ArrayXd data_point;
 	
 	//Compute numerators of the standard deviations.
-  for (unsigned int i = 0; i < labels.size(); i++){
+  for (unsigned int i = 0; i < labels.size(); i++)
+  {
 	    data_point = ArrayXd::Map(data[i].data(), data[i].size());
-	    if (labels[i] == "left"){
+      if (labels[i] == "left")
+      {
 	        left_sds += (data_point - left_means)*(data_point - left_means);
-	    } else if (labels[i] == "keep") {
+      }
+      else if (labels[i] == "keep")
+      {
 	        keep_sds += (data_point - keep_means)*(data_point - keep_means);
-	    } else if (labels[i] == "right") {
+      }
+      else if (labels[i] == "right") {
 	        right_sds += (data_point - right_means)*(data_point - right_means);
 	    }
 	}
 	
 	//compute standard deviations
 	left_sds = (left_sds/left_size).sqrt();
-    keep_sds = (keep_sds/keep_size).sqrt();
-    right_sds = (right_sds/right_size).sqrt();
+  keep_sds = (keep_sds/keep_size).sqrt();
+  right_sds = (right_sds/right_size).sqrt();
 }
 
 string GNB::predict(vector<double> sample)
@@ -128,7 +139,8 @@ string GNB::predict(vector<double> sample)
 	double left_p = 1.0;
 	double keep_p = 1.0;
 	double right_p = 1.0; 
-	for (int i=0; i<4; i++){
+  for (int i=0; i<4; i++)
+  {
 	    left_p *= (1.0/sqrt(2.0 * M_PI * pow(left_sds[i], 2))) * exp(-0.5*pow(sample[i] - left_means[i], 2)/pow(left_sds[i], 2));
 	    keep_p *= (1.0/sqrt(2.0 * M_PI * pow(keep_sds[i], 2))) * exp(-0.5*pow(sample[i] - keep_means[i], 2)/pow(keep_sds[i], 2));
 	    right_p *= (1.0/sqrt(2.0 * M_PI * pow(right_sds[i], 2))) * exp(-0.5*pow(sample[i] - right_means[i], 2)/pow(right_sds[i], 2));
@@ -137,8 +149,10 @@ string GNB::predict(vector<double> sample)
     double probs[3] = {left_p, keep_p, right_p};
     double max = left_p;
     double max_index = 0;
-    for (int i = 1; i < 3; i++){
-        if (probs[i] > max) {
+    for (int i = 1; i < 3; i++)
+    {
+        if (probs[i] > max)
+        {
             max = probs[i];
             max_index = i;
         }
