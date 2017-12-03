@@ -1,4 +1,4 @@
-project(predict)
+project(bplan)
 
 cmake_minimum_required (VERSION 3.5)
 
@@ -12,6 +12,6 @@ set(SRC vehicle.cpp cost.cpp road.cpp main.cpp)
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
-add_executable(predict ${SRC} ${HDRS} readme.md)
+add_executable(bplan ${SRC} ${HDRS} readme.md)
 
 #target_link_libraries(pid z ssl uv uWS)

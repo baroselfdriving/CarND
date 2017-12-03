@@ -33,14 +33,8 @@ void Road::populate_traffic() {
 	for (int l = 0; l < this->num_lanes; l++)
 	{
 		int lane_speed = this->lane_speeds[l];
-		bool vehicle_just_added = false;
 		for(int s = start_s; s < start_s+this->update_width; s++)
 		{
-			
-			if(vehicle_just_added)
-			{
-				vehicle_just_added = false;
-			}
 			if(((double) rand() / (RAND_MAX)) < this->density)
 			{
 				
@@ -48,7 +42,6 @@ void Road::populate_traffic() {
 				vehicle.state = "CS";
 				this->vehicles_added += 1;
 				this->vehicles.insert(std::pair<int,Vehicle>(vehicles_added,vehicle));
-				vehicle_just_added = true;
 			}
 		}
 	}
