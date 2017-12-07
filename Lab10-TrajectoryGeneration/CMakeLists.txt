@@ -12,6 +12,6 @@ set(SRC hybrid_breadth_first.cpp main.cpp)
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
-add_executable(bplan ${SRC} ${HDRS} readme.md)
+add_executable(trajen ${SRC} ${HDRS} readme.md)
 
 #target_link_libraries(pid z ssl uv uWS)

@@ -130,7 +130,6 @@ HBF::maze_path HBF::search(vector< vector<int> > grid, vector<double> start, vec
   came_from[stack][idx(state.x)][idx(state.y)] = state;
   int total_closed = 1;
   vector<maze_s> opened = {state};
-  bool finished = false;
   while(!opened.empty())
   {
     sort(opened.begin(), opened.end(), compare_maze_s);
@@ -154,7 +153,6 @@ HBF::maze_path HBF::search(vector< vector<int> > grid, vector<double> start, vec
 
     for(int i = 0; i < next_state.size(); i++)
     {
-      int g2 = next_state[i].g;
       double x2 = next_state[i].x;
       double y2 = next_state[i].y;
       double theta2 = next_state[i].theta;
