@@ -19,6 +19,10 @@ set(sources
   data/highway_map.csv
   src/p11_helper.h
   src/p11_helper.cpp
+  src/trajectory_planner.h
+  src/trajectory_planner.cpp
+  src/waypoint.h
+  src/waypoint.cpp
   src/main.cpp)
 add_executable(path_planning ${sources})
 target_link_libraries(path_planning z ssl uv uWS)

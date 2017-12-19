@@ -1,4 +1,6 @@
 #include "p11_helper.h"
+#include "trajectory_planner.h"
+#include "waypoint.h"
 
 #include <fstream>
 #include <uWS/uWS.h>
@@ -18,6 +20,7 @@ int main()
   uWS::Hub h;
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
+  WaypointList mapWaypoints;
   std::vector<double> map_waypoints_x;
   std::vector<double> map_waypoints_y;
   std::vector<double> map_waypoints_s;
@@ -34,25 +37,16 @@ int main()
   std::string line;
   while (std::getline(in_map_, line)) {
     std::istringstream iss(line);
-  	double x;
-  	double y;
-  	float s;
-  	float d_x;
-  	float d_y;
-  	iss >> x;
-  	iss >> y;
-  	iss >> s;
-  	iss >> d_x;
-  	iss >> d_y;
-  	map_waypoints_x.push_back(x);
-  	map_waypoints_y.push_back(y);
-  	map_waypoints_s.push_back(s);
-  	map_waypoints_dx.push_back(d_x);
-  	map_waypoints_dy.push_back(d_y);
+    Waypoint wp;
+    iss >> wp.x;
+    iss >> wp.y;
+    iss >> wp.s;
+    iss >> wp.dx;
+    iss >> wp.dy;
+    mapWaypoints.push_back(wp);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy]
-              (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
+  h.onMessage([&mapWaypoints](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
   {
     (void)opCode;
 
@@ -109,7 +103,7 @@ int main()
              double next_s = car_s + (i+1) * dist_inc;
              double next_d = 6;
 
-             std::vector<double> xy = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+             std::vector<double> xy = getXY(next_s, next_d, mapWaypoints);
 
                next_x_vals.push_back(xy[0]);
                next_y_vals.push_back(xy[1]);
