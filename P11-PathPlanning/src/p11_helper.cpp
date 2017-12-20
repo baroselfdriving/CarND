@@ -6,10 +6,10 @@
 std::string hasJsonData(std::string s)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  auto found_null = s.find("null");
+  auto foundNull = s.find("null");
   auto b1 = s.find_first_of("[");
   auto b2 = s.find_first_of("}");
-  if (found_null != std::string::npos)
+  if (foundNull != std::string::npos)
   {
     return "";
   }
@@ -67,13 +67,13 @@ WaypointList::const_iterator NextWaypoint(const CartesianCoord& p, double theta,
 FrenetCoord getFrenet(const CartesianCoord& p, double theta, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  auto next_wp = NextWaypoint(p, theta, wps);
-  auto prev_wp = ( (next_wp == wps.begin()) ? (wps.end()-1) : (next_wp-1) );
+  auto nextWp = NextWaypoint(p, theta, wps);
+  auto prevWp = ( (nextWp == wps.begin()) ? (wps.end()-1) : (nextWp-1) );
 
-  double n_x = next_wp->point.x - prev_wp->point.x;
-  double n_y = next_wp->point.y - prev_wp->point.y;
-  double x_x = p.x - prev_wp->point.x;
-  double x_y = p.y - prev_wp->point.y;
+  double n_x = nextWp->point.x - prevWp->point.x;
+  double n_y = nextWp->point.y - prevWp->point.y;
+  double x_x = p.x - prevWp->point.x;
+  double x_y = p.y - prevWp->point.y;
 
   // find the projection of x onto n
   double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
@@ -85,8 +85,8 @@ FrenetCoord getFrenet(const CartesianCoord& p, double theta, const WaypointList&
 
   //see if d value is positive or negative by comparing it to a center point
 
-  double center_x = 1000 - prev_wp->point.x;
-  double center_y = 2000 - prev_wp->point.y;
+  double center_x = 1000 - prevWp->point.x;
+  double center_y = 2000 - prevWp->point.y;
   double centerToPos = distance(center_x,center_y,x_x,x_y);
   double centerToRef = distance(center_x,center_y,proj_x,proj_y);
 
@@ -97,10 +97,10 @@ FrenetCoord getFrenet(const CartesianCoord& p, double theta, const WaypointList&
 
   // calculate s value
   fp.s = 0;
-  for(WaypointList::const_iterator it = wps.begin(); it != prev_wp; ++it)
+  for(WaypointList::const_iterator it = wps.begin(); it != (prevWp-1); ++it)
   {
-    WaypointList::const_iterator itNext = it++;
-    fp.s += distance(it->point.x, it->point.y, itNext->point.x, itNext->point.y);
+    WaypointList::const_iterator itNext = it+1;
+    fp.s += distance(it->point, itNext->point);
   }
   fp.s += distance(0, 0, proj_x, proj_y);
 
