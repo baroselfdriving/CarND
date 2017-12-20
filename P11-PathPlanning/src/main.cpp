@@ -1,6 +1,7 @@
 #include "p11_helper.h"
 #include "trajectory_planner.h"
 #include "waypoint.h"
+#include "vehicle.h"
 
 #include <fstream>
 #include <uWS/uWS.h>
@@ -19,34 +20,36 @@ int main()
 {
   uWS::Hub h;
 
-  // Load up map values for waypoint's x,y,s and d normalized normal vectors
-  WaypointList mapWaypoints;
-  std::vector<double> map_waypoints_x;
-  std::vector<double> map_waypoints_y;
-  std::vector<double> map_waypoints_s;
-  std::vector<double> map_waypoints_dx;
-  std::vector<double> map_waypoints_dy;
-
-  // Waypoint map to read from
-  std::string map_file_ = "../data/highway_map.csv";
-  // The max s value before wrapping around the track back to 0
-  double max_s = 6945.554;
-
-  std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
-
+  // Load waypoints from in the map from file. The waypoints lie on the innermost lane around the track.
+  std::string waypointsFile = "../data/highway_map.csv";
+  std::ifstream fs(waypointsFile.c_str(), std::ifstream::in);
+  if(!fs.is_open())
+  {
+    std::cerr << "Unable to open waypoints file" << std::endl;
+    return -1;
+  }
+  WaypointList trackWaypoints;
   std::string line;
-  while (std::getline(in_map_, line)) {
+  while (std::getline(fs, line))
+  {
     std::istringstream iss(line);
     Waypoint wp;
-    iss >> wp.x;
-    iss >> wp.y;
-    iss >> wp.s;
-    iss >> wp.dx;
-    iss >> wp.dy;
-    mapWaypoints.push_back(wp);
+    iss >> wp.point.x;
+    iss >> wp.point.y;
+    iss >> wp.frenet.s;
+    iss >> wp.frenet.dx;
+    iss >> wp.frenet.dy;
+    trackWaypoints.push_back(wp);
+  }
+  fs.close();
+
+  if(trackWaypoints.size() < 1)
+  {
+    std::cerr << "No waypoints read" << std::endl;
+    return -1;
   }
 
-  h.onMessage([&mapWaypoints](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
+  h.onMessage([&trackWaypoints](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
   {
     (void)opCode;
 
@@ -55,71 +58,111 @@ int main()
     // The 2 signifies a websocket event
     //auto sdata = string(data).substr(0, length);
     //cout << sdata << endl;
-    if (length && length > 2 && data[0] == '4' && data[1] == '2')
+    if (length && length > 2 && pData[0] == '4' && pData[1] == '2')
     {
-      auto s = hasData(data);
+      std::string s = hasJsonData(pData);
 
       if (s != "")
       {
-        auto j = json::parse(s);
-        
+        json j = json::parse(s);
         std::string event = j[0].get<std::string>();
         
-        if (event == "telemetry") {
+        if (event == "telemetry")
+        {
           // j[1] is the data JSON object
-          
-        	// Main car's localization Data
-          	double car_x = j[1]["x"];
-          	double car_y = j[1]["y"];
-          	double car_s = j[1]["s"];
-          	double car_d = j[1]["d"];
-          	double car_yaw = j[1]["yaw"];
-          	double car_speed = j[1]["speed"];
 
-          	// Previous path data given to the Planner
-            /// \note: The simulated car doesn't cover all the points passed to the sim in the last iteration. The
-            /// path returned here is the waypoints left over from the last time
-            auto previous_path_x = j[1]["previous_path_x"];
-          	auto previous_path_y = j[1]["previous_path_y"];
-          	// Previous path's end s and d values 
-          	double end_path_s = j[1]["end_path_s"];
-          	double end_path_d = j[1]["end_path_d"];
+          // Main car's localization Data
+          Vehicle car;
+          car.id = -1;
+          car.position.x = j[1]["x"];
+          car.position.y = j[1]["y"];
+          car.velocity.x = 0; // don't know
+          car.velocity.y = 0; // don't know
+          car.frenet.s = j[1]["s"];
+          car.frenet.d = j[1]["d"];
+          car.yawAngle = deg2rad(j[1]["yaw"]);
+          car.speed = j[1]["speed"];
 
-          	// Sensor Fusion Data, a list of all other cars on the same side of the road.
-          	auto sensor_fusion = j[1]["sensor_fusion"];
+          /// \note: The simulated car doesn't cover all the points passed to the sim in the last iteration. The
+          /// path returned here is the waypoints left over from the last time
 
-          	json msgJson;
+          // Previous path data given to the Planner
+          auto previousPathX = j[1]["previous_path_x"];
+          auto previousPathY = j[1]["previous_path_y"];
 
-            std::vector<double> next_x_vals;
-            std::vector<double> next_y_vals;
+          // Previous path's end s and d values
+          double previousPathEndS = j[1]["end_path_s"];
+          double previousPathEndD = j[1]["end_path_d"];
+          size_t previousPathSz = previousPathX.size();
+          if( previousPathSz != previousPathY.size())
+          {
+            std::cerr << "Previous path X and Y sizes not the same" << std::endl;
+            return -1;
+          }
 
+          CartesianCoordList previousPath;
+          for(unsigned int i = 0; i < previousPathSz; ++i)
+          {
+            CartesianCoord p;
+            p.x = previousPathX[i];
+            p.y = previousPathY[i];
+            previousPath.push_back(p);
+          }
 
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-            /// --------------------------------
-           double dist_inc = 0.5;
+          // Sensor Fusion Data, a list of all other cars on the same side of the road.
+          auto sensor_fusion = j[1]["sensor_fusion"];
+          VehicleList otherVehicles;
+          for(const auto& item : sensor_fusion)
+          {
+            Vehicle vehicle;
+            vehicle.id = item[0];
+            vehicle.position.x = item[1];
+            vehicle.position.y = item[2];
+            vehicle.velocity.x = item[3];
+            vehicle.velocity.y = item[4];
+            vehicle.frenet.s = item[5];
+            vehicle.frenet.d = item[6];
+            vehicle.yawAngle = 0; // don't know, don't care
+            vehicle.speed = distance(0,0,vehicle.velocity.x, vehicle.velocity.y);
+            otherVehicles.push_back(vehicle);
+          }
 
-           for(int i = 0; i < 50; i++)
-           {
-             double next_s = car_s + (i+1) * dist_inc;
-             double next_d = 6;
+          // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+          TrajectoryPlanner trajPlanner;
 
-             std::vector<double> xy = getXY(next_s, next_d, mapWaypoints);
+          CartesianCoordList path = trajPlanner.getPlan(car, previousPath, trackWaypoints);
+/*
+          /// ------------ TEST --------------------
+          double dist_inc = 0.5;
+          for(int i = 0; i < 50; i++)
+          {
+            FrenetCoord nextFrenetPoint;
+            nextFrenetPoint.s = car.frenet.s + (i+1) * dist_inc;
+            nextFrenetPoint.d = 6;
 
-               next_x_vals.push_back(xy[0]);
-               next_y_vals.push_back(xy[1]);
-               std::cout << next_s << " " << xy[0] << " " << xy[1] << std::endl;
-           }
-            /// --------------------------------
+            CartesianCoord xy = getXY(nextFrenetPoint, trackWaypoints);
 
+            next_x_vals.push_back(xy.x);
+            next_y_vals.push_back(xy.y);
+            std::cout << nextFrenetPoint.s << " " << nextFrenetPoint.d << " " << xy.x << " " << xy.y << std::endl;
+          }
+          /// ------------- END TEST -------------------
+*/
+          std::vector<double> next_x_vals;
+          std::vector<double> next_y_vals;
+          for(const auto& item : path)
+          {
+            next_x_vals.push_back( item.x );
+            next_y_vals.push_back( item.y );
+          }
 
-          	msgJson["next_x"] = next_x_vals;
-          	msgJson["next_y"] = next_y_vals;
+          json msgJson;
+          msgJson["next_x"] = next_x_vals;
+          msgJson["next_y"] = next_y_vals;
+          auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
-          	auto msg = "42[\"control\","+ msgJson.dump()+"]";
-
-          	//this_thread::sleep_for(chrono::milliseconds(1000));
-          	ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-          
+          //this_thread::sleep_for(chrono::milliseconds(1000));
+          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       }
       else

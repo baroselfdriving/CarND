@@ -3,7 +3,7 @@
 #include <limits>
 
 //---------------------------------------------------------------------------------------------------------------------
-std::string hasData(std::string s)
+std::string hasJsonData(std::string s)
 //---------------------------------------------------------------------------------------------------------------------
 {
   auto found_null = s.find("null");
@@ -21,14 +21,14 @@ std::string hasData(std::string s)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-WaypointList::const_iterator ClosestWaypoint(double x, double y, const WaypointList& wps)
+WaypointList::const_iterator ClosestWaypoint(const CartesianCoord& p, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   double nearest = std::numeric_limits<double>::max();
   WaypointList::const_iterator itNearest;
   for(WaypointList::const_iterator it = wps.begin(); it != wps.end(); ++it)
   {
-    double dist = distance(x, y, it->x, it->y);
+    double dist = distance(p, it->point);
     if(dist < nearest)
     {
       nearest = dist;
@@ -39,15 +39,15 @@ WaypointList::const_iterator ClosestWaypoint(double x, double y, const WaypointL
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-WaypointList::const_iterator NextWaypoint(double x, double y, double theta, const WaypointList& wps)
+WaypointList::const_iterator NextWaypoint(const CartesianCoord& p, double theta, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  auto closestWaypoint = ClosestWaypoint(x, y, wps);
+  auto closestWaypoint = ClosestWaypoint(p, wps);
 
-  double mapX = closestWaypoint->x;
-  double mapY = closestWaypoint->y;
+  double mapX = closestWaypoint->point.x;
+  double mapY = closestWaypoint->point.y;
 
-  double heading = atan2((mapY-y),(mapX-x));
+  double heading = atan2((mapY - p.y),(mapX - p.x));
 
   double angle = fabs(theta-heading);
   angle = std::min(2*M_PI - angle, angle);
@@ -64,78 +64,79 @@ WaypointList::const_iterator NextWaypoint(double x, double y, double theta, cons
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-std::vector<double> getFrenet(double x, double y, double theta, const WaypointList& wps)
+FrenetCoord getFrenet(const CartesianCoord& p, double theta, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  auto next_wp = NextWaypoint(x,y, theta, wps);
+  auto next_wp = NextWaypoint(p, theta, wps);
   auto prev_wp = ( (next_wp == wps.begin()) ? (wps.end()-1) : (next_wp-1) );
 
-  double n_x = next_wp->x - prev_wp->x;
-  double n_y = next_wp->y - prev_wp->y;
-  double x_x = x - prev_wp->x;
-  double x_y = y - prev_wp->y;
+  double n_x = next_wp->point.x - prev_wp->point.x;
+  double n_y = next_wp->point.y - prev_wp->point.y;
+  double x_x = p.x - prev_wp->point.x;
+  double x_y = p.y - prev_wp->point.y;
 
   // find the projection of x onto n
   double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
   double proj_x = proj_norm*n_x;
   double proj_y = proj_norm*n_y;
 
-  double frenet_d = distance(x_x,x_y,proj_x,proj_y);
+  FrenetCoord fp;
+  fp.d = distance(x_x,x_y,proj_x,proj_y);
 
   //see if d value is positive or negative by comparing it to a center point
 
-  double center_x = 1000 - prev_wp->x;
-  double center_y = 2000 - prev_wp->y;
+  double center_x = 1000 - prev_wp->point.x;
+  double center_y = 2000 - prev_wp->point.y;
   double centerToPos = distance(center_x,center_y,x_x,x_y);
   double centerToRef = distance(center_x,center_y,proj_x,proj_y);
 
   if(centerToPos <= centerToRef)
   {
-    frenet_d *= -1;
+    fp.d *= -1;
   }
 
   // calculate s value
-  double frenet_s = 0;
+  fp.s = 0;
   for(WaypointList::const_iterator it = wps.begin(); it != prev_wp; ++it)
   {
     WaypointList::const_iterator itNext = it++;
-    frenet_s += distance(it->x, it->y, itNext->x, itNext->y);
+    fp.s += distance(it->point.x, it->point.y, itNext->point.x, itNext->point.y);
   }
-  frenet_s += distance(0, 0, proj_x, proj_y);
+  fp.s += distance(0, 0, proj_x, proj_y);
 
-  return {frenet_s,frenet_d};
+  return fp;
 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-std::vector<double> getXY(double s, double d, const WaypointList& wps)
+CartesianCoord getXY(const FrenetCoord& fp, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   WaypointList::const_iterator prev_wp = wps.begin();
-
-  while(s > prev_wp->s && (prev_wp != wps.end()) )
+  while(fp.s > (prev_wp+1)->frenet.s && (prev_wp != wps.end()-1) )
   {
     prev_wp++;
   }
 
-  WaypointList::const_iterator wp2 = ++prev_wp;
+  WaypointList::const_iterator wp2 = (prev_wp+1);
   if(wp2 == wps.end())
   {
     wp2 = wps.begin();
   }
 
-  double heading = atan2((wp2->y - prev_wp->y),(wp2->x - prev_wp->x));
+  double heading = atan2((wp2->point.y - prev_wp->point.y),(wp2->point.x - prev_wp->point.x));
 
   // the x,y,s along the segment
-  double seg_s = (s - prev_wp->s);
-  double seg_x = prev_wp->x + seg_s*cos(heading);
-  double seg_y = prev_wp->y + seg_s*sin(heading);
+  double seg_s = (fp.s - prev_wp->frenet.s);
+  double seg_x = prev_wp->point.x + seg_s*cos(heading);
+  double seg_y = prev_wp->point.y + seg_s*sin(heading);
 
   double perp_heading = heading-M_PI/2;
 
-  double x = seg_x + d*cos(perp_heading);
-  double y = seg_y + d*sin(perp_heading);
+  CartesianCoord p;
+  p.x = seg_x + fp.d * cos(perp_heading);
+  p.y = seg_y + fp.d * sin(perp_heading);
 
-  return {x,y};
+  return p;
 
 }

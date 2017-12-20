@@ -21,8 +21,13 @@ set(sources
   src/p11_helper.cpp
   src/trajectory_planner.h
   src/trajectory_planner.cpp
+  src/behaviour.h
+  src/behaviour_planner.h
+  src/behaviour_planner.cpp
   src/waypoint.h
   src/waypoint.cpp
+  src/vehicle.h
+  src/vehicle.cpp
   src/main.cpp)
 add_executable(path_planning ${sources})
 target_link_libraries(path_planning z ssl uv uWS)
