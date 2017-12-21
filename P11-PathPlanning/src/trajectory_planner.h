@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <array>
+#include <deque>
 
 class TrajectoryPlanner
 {
@@ -19,7 +20,8 @@ public:
   static constexpr double SAFE_MANOEUVRE_DISTANCE = 100; //!< how much space do we want to consider a maneouvre
 
   static constexpr double SIM_DELTA_TIME = 0.02; //!< waypoint spacing in time, as implemented by simulator
-  static constexpr unsigned int SIM_NUM_WAYPOINTS = 50; //!< number of waypoints to pass into sim each time
+  static constexpr unsigned int SIM_NUM_WAYPOINTS =
+      static_cast<unsigned int>(1./SIM_DELTA_TIME); //!< number of waypoints to pass into sim each cycle
 
 public:
   TrajectoryPlanner();
@@ -45,7 +47,6 @@ private:
     double d;
     double dd;
     double ddd;
-    double t;
   };
 
   struct PolyCoeffs
@@ -55,15 +56,10 @@ private:
   };
 
   /// Solve for 5th order polynomial coefficients
-  static PolyCoeffs computePolynomialCoefficients(const FrenetState& initial, const FrenetState& final);
-
-  /// Compute lateral speed and acceleration
-  void computeMotionHistory(const Vehicle& car);
+  static PolyCoeffs computePolynomialCoefficients(double dt, const FrenetState& initial, const FrenetState& final);
 
 private:
-  CartesianCoord egoVelocity_;
-  CartesianCoord egoAcceleration_;
-  CartesianCoord prevCarPosition_;
+  std::deque<FrenetState> history_;
 };
 
 

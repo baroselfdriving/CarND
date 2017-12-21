@@ -18,8 +18,6 @@ using json = nlohmann::json;
 int main()
 //---------------------------------------------------------------------------------------------------------------------
 {
-  uWS::Hub h;
-
   // Load waypoints from in the map from file. The waypoints lie on the innermost lane around the track.
   std::string waypointsFile = "../data/highway_map.csv";
   std::ifstream fs(waypointsFile.c_str(), std::ifstream::in);
@@ -49,7 +47,10 @@ int main()
     return -1;
   }
 
-  h.onMessage([&trackWaypoints](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
+  TrajectoryPlanner trajPlanner;
+
+  uWS::Hub h;
+  h.onMessage([&trackWaypoints, &trajPlanner](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
   {
     (void)opCode;
 
@@ -128,7 +129,6 @@ int main()
           }
 
           // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-          TrajectoryPlanner trajPlanner;
 
           CartesianCoordList path = trajPlanner.getPlan(car, otherVehicles, previousPath, trackWaypoints);
 /*

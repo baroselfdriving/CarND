@@ -8,9 +8,6 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner()
-  : egoVelocity_({0,0}),
-    egoAcceleration_({0,0}),
-    prevCarPosition_({0,0})
 //---------------------------------------------------------------------------------------------------------------------
 {}
 
@@ -59,7 +56,7 @@ VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const V
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-TrajectoryPlanner::PolyCoeffs TrajectoryPlanner::computePolynomialCoefficients(const FrenetState& initial, const FrenetState& final)
+TrajectoryPlanner::PolyCoeffs TrajectoryPlanner::computePolynomialCoefficients(double dt, const FrenetState& initial, const FrenetState& final)
 //---------------------------------------------------------------------------------------------------------------------
 {
   // Solve for ceofficients of jerk minimising polynomial as described in term3 - trajectory generation lessons
@@ -68,7 +65,6 @@ TrajectoryPlanner::PolyCoeffs TrajectoryPlanner::computePolynomialCoefficients(c
   coeffs.sa = {initial.s, initial.sd, initial.sdd/2.0, 0, 0, 0};
   coeffs.da = {initial.d, initial.dd, initial.ddd/2.0, 0, 0, 0};
 
-  const double dt = final.t - initial.t;
   const double dt2 = dt*dt;
   const double dt3 = dt2*dt;
   const double dt4 = dt3*dt;
@@ -112,85 +108,97 @@ TrajectoryPlanner::PolyCoeffs TrajectoryPlanner::computePolynomialCoefficients(c
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::computeMotionHistory(const Vehicle& car)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  // Find average X component of velocity and acceleration in car frame
-  const double ca = cos(car.yawAngle);
-  const double sa = sin(car.yawAngle);
-  //lateralSpeed_ = ca * (car.->position.x - me.position.x) + sa * (other->position.y - me.position.y);
-
-  /// \todo
-}
-
-//---------------------------------------------------------------------------------------------------------------------
 CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
                                               const CartesianCoordList& myPrevPath, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  // keep a history of how the car is moving
-  computeMotionHistory(me);
-
-  size_t myPrevPathSz = myPrevPath.size();
-  CartesianCoordList path = myPrevPath;
+  const size_t myPrevPathSz = myPrevPath.size();
+  const size_t nPointsToAdd = SIM_NUM_WAYPOINTS - myPrevPathSz;
+  CartesianCoordList path;//= myPrevPath;
 
   // set initial boundary conditions
   FrenetState initial;
-  initial.s = me.frenet.s;
-  initial.sd = me.speed;
-  initial.sdd = egoAcceleration_.x;
-  initial.d = me.frenet.d;
-  initial.dd = egoVelocity_.y;
-  initial.ddd = egoAcceleration_.y;
-  initial.t = 0;
+  if(myPrevPathSz == 0)
+  {
+    // set to car coordinates at start
+    history_.clear();
+    initial.s = me.frenet.s;
+    initial.sd = me.speed;
+    initial.sdd = 0;
+    initial.d = me.frenet.d;
+    initial.dd = 0;
+    initial.ddd = 0;
+  }
+  else
+  {
+    // initial condition is the end of the previous path
+    history_.erase(history_.begin(), history_.begin()+nPointsToAdd);
+    initial = history_.back();
+  }
+
+  int targetLane = getLaneNumber(initial.d); /// \todo replace with correct lane number
 
   // find nearest vehicle and set final boundary conditions
-  int targetLane = getLaneNumber(me.frenet.d);
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
   const double minTime = MAX_SPEED/MAX_ACCELERATION;
-  double targetTime = minTime;
-  auto vehicleIt = findLeadVehicle(targetLane, me, others, wps);
+  double targetTime = minTime;/*
+  auto vehicleIt = findLeadVehicle(targetLane, me, others, wps); ///\todo use 'me'??
   if( vehicleIt != others.end() )
   {
     targetDist = vehicleIt->frenet.s - SAFE_FOLLOW_DISTANCE;
     if(targetDist < SAFE_MANOEUVRE_DISTANCE)
     {
       targetSpeed = vehicleIt->speed; // match speed of vehicle in front
-      targetTime = std::max(minTime, fabs(targetSpeed - me.speed)/MAX_ACCELERATION);
+      targetTime = std::max(minTime, fabs(targetSpeed - initial.sd)/MAX_ACCELERATION);
     }
-  }
+  }*/
   FrenetState final;
-  final.s = targetDist;
+  final.s = initial.s + targetDist;
   final.sd = targetSpeed;
   final.sdd = 0;
   final.d = targetLane * LANE_WIDTH + LANE_WIDTH/2.;
   final.dd = 0;
   final.ddd = 0;
-  final.t = targetTime;
 
 
   // solve for coefficients and generate waypoints
-  PolyCoeffs coeffs = computePolynomialCoefficients(initial, final);
-
-  // add waypoints to path
-  const int nPoints = SIM_NUM_WAYPOINTS - myPrevPathSz;
+  PolyCoeffs coeffs = computePolynomialCoefficients(targetTime, initial, final);
   double t = 0;
-  for(int i = 0; i < nPoints; ++i)
+  for(int i = 0; i < nPointsToAdd; ++i)
   {
     const double t2 = t*t;
     const double t3 = t2*t;
     const double t4 = t3*t;
     const double t5 = t4*t;
-    FrenetCoord fp;
-    fp.s = coeffs.sa[0] + coeffs.sa[1]*t + coeffs.sa[2]*t2 + coeffs.sa[3]*t3 + coeffs.sa[4]*t4 + coeffs.sa[5]*t5;
-    fp.d = coeffs.da[0] + coeffs.da[1]*t + coeffs.da[2]*t2 + coeffs.da[3]*t3 + coeffs.da[4]*t4 + coeffs.da[5]*t5;
+
+    FrenetState fs;
+    fs.s = coeffs.sa[0] + coeffs.sa[1]*t + coeffs.sa[2]*t2 + coeffs.sa[3]*t3 + coeffs.sa[4]*t4 + coeffs.sa[5]*t5;
+    fs.sd = coeffs.sa[1] + 2*coeffs.sa[2]*t + 3*coeffs.sa[3]*t2 + 4*coeffs.sa[4]*t3 + 5*coeffs.sa[5]*t4;
+    fs.sdd = 2*coeffs.sa[2] + 6*coeffs.sa[3]*t + 12*coeffs.sa[4]*t2 + 20*coeffs.sa[5]*t3;
+    fs.d = coeffs.da[0] + coeffs.da[1]*t + coeffs.da[2]*t2 + coeffs.da[3]*t3 + coeffs.da[4]*t4 + coeffs.da[5]*t5;
+    fs.dd = coeffs.da[1] + 2*coeffs.da[2]*t + 3*coeffs.da[3]*t2 + 4*coeffs.da[4]*t3 + 5*coeffs.da[5]*t4;
+    fs.ddd = 2*coeffs.da[2] + 6*coeffs.da[3]*t + 12*coeffs.da[4]*t2 + 20*coeffs.da[5]*t3;
     t += SIM_DELTA_TIME;
 
+    history_.push_back(fs);
+  }
+
+  // add waypoints to path
+  for(const auto& h : history_)
+  {
+    FrenetCoord fp;
+    fp.s = h.s;
+    fp.d = h.d;
     CartesianCoord wp = getXY(fp, wps);
     path.push_back(wp);
   }
 
+  std::cout << "-------------------------------------------------------------" << std::endl;
+  for(unsigned int i = 0; i < path.size(); ++i)
+  {
+    std::cout << i << ": " << path[i].x << " " << path[i].y << std::endl;
+  }
   return path;
 }
 
