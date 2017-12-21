@@ -19,7 +19,7 @@ public:
   static constexpr double SAFE_FOLLOW_DISTANCE = 1; //!< how close can we get to a vehicle in front
   static constexpr double SAFE_MANOEUVRE_DISTANCE = 100; //!< how much space do we want to consider a maneouvre
 
-  static constexpr double SIM_DELTA_TIME = 0.02; //!< waypoint spacing in time, as implemented by simulator
+  static constexpr double SIM_DELTA_TIME = 0.02; //!< sim time between each waypoint
   static constexpr unsigned int SIM_NUM_WAYPOINTS =
       static_cast<unsigned int>(1./SIM_DELTA_TIME); //!< number of waypoints to pass into sim each cycle
 
@@ -38,25 +38,30 @@ public:
   CartesianCoordList getPlan(const Vehicle& me, const VehicleList& others,
                              const CartesianCoordList& myPrevPath, const WaypointList& wps);
 
-private:
+//private:
+  struct PolyState
+  {
+    double q;
+    double qDot;
+    double qDotDot;
+    double t;
+  };
+
   struct FrenetState
   {
     double s;
-    double sd;
-    double sdd;
+    double sv;
+    double sa;
+    double sj;
     double d;
-    double dd;
-    double ddd;
-  };
-
-  struct PolyCoeffs
-  {
-    std::array<double, 6> sa;
-    std::array<double, 6> da;
+    double dv;
+    double da;
+    double dj;
+    double t;
   };
 
   /// Solve for 5th order polynomial coefficients
-  static PolyCoeffs computePolynomialCoefficients(double dt, const FrenetState& initial, const FrenetState& final);
+  static std::array<double, 6> computePolynomialCoefficients(const PolyState& initial, const PolyState& final);
 
 private:
   std::deque<FrenetState> history_;
