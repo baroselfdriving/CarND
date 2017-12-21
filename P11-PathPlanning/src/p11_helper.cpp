@@ -104,6 +104,8 @@ FrenetCoord getFrenet(const CartesianCoord& p, double theta, const WaypointList&
   }
   fp.s += distance(0, 0, proj_x, proj_y);
 
+  fp.dx = fp.dy = 0; // don't care
+
   return fp;
 
 }

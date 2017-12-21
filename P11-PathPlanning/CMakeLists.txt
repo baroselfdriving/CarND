@@ -14,6 +14,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
+include_directories(src/Eigen-3.3)
 set(sources
   README.md
   data/highway_map.csv

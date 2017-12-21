@@ -130,7 +130,7 @@ int main()
           // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
           TrajectoryPlanner trajPlanner;
 
-          CartesianCoordList path = trajPlanner.getPlan(car, previousPath, trackWaypoints);
+          CartesianCoordList path = trajPlanner.getPlan(car, otherVehicles, previousPath, trackWaypoints);
 /*
           /// ------------ TEST --------------------
           double dist_inc = 0.5;
