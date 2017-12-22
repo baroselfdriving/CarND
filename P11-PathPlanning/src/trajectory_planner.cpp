@@ -11,7 +11,6 @@
 TrajectoryPlanner::TrajectoryPlanner()
 //---------------------------------------------------------------------------------------------------------------------
 {
-  smoother_.setTimeConstant(10);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -240,14 +239,12 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
   generateFrenetWaypoints(targetSpeed, targetLane, targetTime, nPointsToAdd, history_);
 
   // get cartesian coordinates of waypoints and add to path
-  //smoother_.reset();
   for(const auto& h : history_)
   {
     FrenetCoord fp;
     fp.s = h.s;
     fp.d = h.d;
     CartesianCoord wp = getXY(fp, wps);
-    wp = smoother_.filter(h.t, wp);
     path.push_back(wp);
 /*
     std::cout << h.t << ", " << h.s << ", " << h.sv << ", " << h.sa << ", " << h.sj
