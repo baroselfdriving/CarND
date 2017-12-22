@@ -13,11 +13,11 @@ class TrajectoryPlanner
 {
 public:
   static constexpr double LANE_WIDTH = 4;
-  static constexpr double MAX_SPEED = 22; //!< 50 miles/hr = 22.35 meters/sec
+  static constexpr double MAX_SPEED = 50;//22; //!< 50 miles/hr = 22.35 meters/sec
   static constexpr double MAX_ACCELERATION = 10;
   static constexpr double MAX_JERK = 10;
   static constexpr double SAFE_FOLLOW_DISTANCE = 1; //!< how close can we get to a vehicle in front
-  static constexpr double SAFE_MANOEUVRE_DISTANCE = 100; //!< how much space do we want to consider a maneouvre
+  static constexpr double SAFE_MANOEUVRE_DISTANCE = 30; //!< how much space do we want to consider a maneouvre
 
   static constexpr double SIM_DELTA_TIME = 0.02; //!< sim time between each waypoint
   static constexpr unsigned int SIM_NUM_WAYPOINTS =

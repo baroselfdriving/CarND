@@ -150,7 +150,7 @@ void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos,
 
 
   double dt = 0;
-  for(int i = 0; i < nPoints; ++i)
+  for(unsigned int i = 0; i < nPoints; ++i)
   {
     const double dt2 = dt*dt;
     const double dt3 = dt2*dt;
@@ -219,24 +219,26 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
   }
 
   // find nearest vehicle and set final boundary conditions
-  int targetLane = getFrenetDFromLaneNumber(0) ; /// \todo replace with correct lane number
+  int targetLane = 1;                                             /// \todo replace with correct lane number
+  double targetD = getFrenetDFromLaneNumber(targetLane) ;
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
   double targetTime = 10;//2*targetDist/targetSpeed;
-  /*
-  auto vehicleIt = findLeadVehicle(targetLane, me, others, wps); ///\todo use 'me'??
+
+  auto vehicleIt = findLeadVehicle(targetLane, me, others, wps);  ///\todo use 'me'??
   if( vehicleIt != others.end() )
   {
-    targetDist = vehicleIt->frenet.s - SAFE_FOLLOW_DISTANCE;
+    targetDist = std::min(targetDist, vehicleIt->frenet.s - SAFE_FOLLOW_DISTANCE);
     if(targetDist < SAFE_MANOEUVRE_DISTANCE)
     {
       targetSpeed = vehicleIt->speed; // match speed of vehicle in front
-      targetTime = std::max(minTime, fabs(targetSpeed - initial.sd)/MAX_ACCELERATION);
+      targetTime = std::max(targetTime, fabs(targetSpeed - me.speed)/MAX_ACCELERATION);
     }
-  }*/
+  }
+  std::cout << targetDist << " " << targetSpeed << " " << targetTime << std::endl;
 
   // Generate waypoints in frenet coordinates
-  generateFrenetWaypoints(targetSpeed, targetLane, targetTime, nPointsToAdd, history_);
+  generateFrenetWaypoints(targetSpeed, targetD, targetTime, nPointsToAdd, history_);
 
   // get cartesian coordinates of waypoints and add to path
   for(const auto& h : history_)

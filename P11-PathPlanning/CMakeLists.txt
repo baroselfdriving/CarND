@@ -1,6 +1,7 @@
 project(Path_Planning)
 
 cmake_minimum_required (VERSION 3.5)
+SET( CMAKE_CXX_FLAGS -Wno-missing-braces)
 
 add_definitions(-std=c++11)
 set(CXX_FLAGS "-Wall")

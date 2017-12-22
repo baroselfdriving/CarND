@@ -9,7 +9,7 @@ int main()
 {
   std::vector<TrajectoryPlanner::FrenetState> history;
 
-  int nPoints = 500;
+  unsigned int nPoints = 500;
   double timeDelta = 10;
   double longSpeed = 25;
   double latPos = 6;
