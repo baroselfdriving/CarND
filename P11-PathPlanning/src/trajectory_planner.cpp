@@ -254,7 +254,7 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
               << ", " << h.d << ", " << h.dv << ", " << h.da << ", " << h.dj
               << ", " << wp.x << ", " << wp.y << std::endl;*/
   }
-  std::cout << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
+  //std::cout << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
   return path;
 }
 

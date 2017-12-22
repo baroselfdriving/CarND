@@ -14,7 +14,7 @@ class TrajectoryPlanner
 {
 public:
   static constexpr double LANE_WIDTH = 4;
-  static constexpr double MAX_SPEED = 22.35; ///\todo fix this //!< 50 miles/hr = 22.35 meters/sec
+  static constexpr double MAX_SPEED = 22; //!< 50 miles/hr = 22.35 meters/sec
   static constexpr double MAX_ACCELERATION = 10;
   static constexpr double MAX_JERK = 10;
   static constexpr double SAFE_FOLLOW_DISTANCE = 1; //!< how close can we get to a vehicle in front

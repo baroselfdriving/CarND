@@ -14,6 +14,8 @@ public:
   inline double integrate(double xd)
   {
     x_ += 0.5 * (xd + prevXd_) * dt_;
+    prevXd_ = xd;
+    return x_;
   }
 
 private:
