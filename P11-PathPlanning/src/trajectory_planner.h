@@ -28,7 +28,10 @@ public:
   ~TrajectoryPlanner() = default;
 
   /// Find lane number
-  static int getLaneNumber(double d);
+  static int getLaneNumberFromFrenetD(double d);
+
+  /// Get Frenet d coordinate given lane number
+  static double getFrenetDFromLaneNumber(int lane);
 
   /// Find nearest vehicle ahead of me in the specified lane. If no vehicle, then return vehicles.end()
   static VehicleList::const_iterator findLeadVehicle(int lane, const Vehicle& me,
@@ -62,6 +65,12 @@ public:
 
   /// Solve for 5th order polynomial coefficients
   static std::array<double, 6> computePolynomialCoefficients(const PolyState& initial, const PolyState& final);
+
+  /// Generate first nPoints set of waypoints given final desired longitudinal speed, lateral position,
+  /// and a time duration to achieve the final state in.
+  static void generateFrenetWaypoints(double longSpeed, double latPos, double timeDelta,
+                                      unsigned int nPoints, std::deque<FrenetState>& fwps);
+
 
 private:
   std::deque<FrenetState> history_;

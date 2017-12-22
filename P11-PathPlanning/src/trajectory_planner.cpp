@@ -1,5 +1,6 @@
 #include "trajectory_planner.h"
 #include "p11_helper.h"
+#include "integrator.h"
 
 #include <limits>
 #include <Eigen/Core>
@@ -12,10 +13,17 @@ TrajectoryPlanner::TrajectoryPlanner()
 {}
 
 //---------------------------------------------------------------------------------------------------------------------
-int TrajectoryPlanner::getLaneNumber(double d)
+int TrajectoryPlanner::getLaneNumberFromFrenetD(double d)
 //---------------------------------------------------------------------------------------------------------------------
 {
   return static_cast<int>(std::floor(d/LANE_WIDTH));
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+double TrajectoryPlanner::getFrenetDFromLaneNumber(int lane)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  return lane * LANE_WIDTH + LANE_WIDTH/2.;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -29,7 +37,7 @@ VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const V
   VehicleList::const_iterator nearestVehicle = vehicles.end();
   for(VehicleList::const_iterator other = vehicles.begin(); other != vehicles.end(); ++other)
   {
-    const int otherLane = getLaneNumber(other->frenet.d);
+    const int otherLane = getLaneNumberFromFrenetD(other->frenet.d);
     if(lane != otherLane)
     {
       continue;
@@ -97,20 +105,109 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos, double timeDelta,
+                                                unsigned int nPoints, std::deque<FrenetState>& fwps)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  Integrator integrator(SIM_DELTA_TIME);
+
+  double s0 = 0;
+  double t0 = 0;
+  PolyState sInitial = {0};
+  PolyState dInitial = {0};
+  PolyState sFinal;
+  PolyState dFinal;
+
+  if(fwps.size() > 0)
+  {
+    const auto& it = fwps.back();
+    s0 = it.s;
+    t0 = it.t;
+    sInitial.q = it.sv;
+    sInitial.qDot = it.sa;
+    sInitial.qDotDot = it.sj;
+    sInitial.t = it.t;
+
+    dInitial.q = it.d;
+    dInitial.qDot = it.dv;
+    dInitial.qDotDot = it.da;
+    dInitial.t = it.t;
+  }
+
+  sFinal.q = longSpeed;
+  sFinal.qDot = 0;
+  sFinal.qDotDot = 0;
+  sFinal.t = sInitial.t + timeDelta;
+
+  dFinal.q = latPos;
+  dFinal.qDot = 0;
+  dFinal.qDotDot = 0;
+  dFinal.t = dInitial.t + timeDelta;
+
+  const std::array<double, 6> sCoeffs = computePolynomialCoefficients(sInitial, sFinal);
+  const std::array<double, 6> dCoeffs = computePolynomialCoefficients(dInitial, dFinal);
+
+
+  double dt = 0;
+  for(int i = 0; i < nPoints; ++i)
+  {
+    const double dt2 = dt*dt;
+    const double dt3 = dt2*dt;
+    const double dt4 = dt3*dt;
+    const double dt5 = dt4*dt;
+
+    FrenetState fs;
+    fs.sv = sCoeffs[0] + sCoeffs[1]*dt + sCoeffs[2]*dt2 + sCoeffs[3]*dt3 + sCoeffs[4]*dt4 + sCoeffs[5]*dt5;
+    fs.sa = sCoeffs[1] + 2*sCoeffs[2]*dt + 3*sCoeffs[3]*dt2 + 4*sCoeffs[4]*dt3 + 5*sCoeffs[5]*dt4;
+    fs.sj = 2*sCoeffs[2] + 6*sCoeffs[3]*dt + 12*sCoeffs[4]*dt2 + 20*sCoeffs[5]*dt3;
+
+    fs.d = dCoeffs[0] + dCoeffs[1]*dt + dCoeffs[2]*dt2 + dCoeffs[3]*dt3 + dCoeffs[4]*dt4 + dCoeffs[5]*dt5;
+    fs.dv = dCoeffs[1] + 2*dCoeffs[2]*dt + 3*dCoeffs[3]*dt2 + 4*dCoeffs[4]*dt3 + 5*dCoeffs[5]*dt4;
+    fs.da = 2*dCoeffs[2] + 6*dCoeffs[3]*dt + 12*dCoeffs[4]*dt2 + 20*dCoeffs[5]*dt3;
+    fs.dj = 6*dCoeffs[3] + 24*dCoeffs[4]*dt + 60*dCoeffs[5]*dt2;
+
+    fs.t = t0 + dt;
+    dt += SIM_DELTA_TIME;
+
+    if(i == 0)
+    {
+      fs.s = s0;
+      integrator.reset(fs.s, 0);//fs.sv);
+    }
+    else
+    {
+      fs.s = integrator.integrate(fs.sv);
+    }
+    fwps.push_back(fs);
+  }
+
+  static int j = 0;
+  std::cout << "points" << j++ << " = [";
+  for(const auto& item : fwps)
+  {
+    std::cout << item.t << ", " << item.s << ", " << item.sv << ", " << item.sa << ", " << item.sj
+              << ", " << item.d << ", " << item.dv << ", " << item.da << ", " << item.dj << std::endl;
+  }
+  std::cout << "];";
+
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
                                               const CartesianCoordList& myPrevPath, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const size_t myPrevPathSz = myPrevPath.size();
-  const size_t nPointsToAdd = SIM_NUM_WAYPOINTS - myPrevPathSz;
+  size_t nPointsToAdd = SIM_NUM_WAYPOINTS - myPrevPathSz;
   CartesianCoordList path;//= myPrevPath;
 
   // set initial boundary conditions
-  FrenetState initial;
   if(myPrevPathSz == 0)
   {
     // set to car coordinates at start
     history_.clear();
+
+    FrenetState initial;
     initial.s = me.frenet.s;
     initial.sv = me.speed;
     initial.sa = 0;
@@ -120,17 +217,17 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
     initial.da = 0;
     initial.dj = 0;
     initial.t = 0;
+
+    history_.push_back(initial);
+    nPointsToAdd -= 1;
   }
   else
   {
-    // initial condition is the end of the previous path
-    history_.erase(history_.begin(), history_.begin()+nPointsToAdd);
-    initial = history_.back();
+    history_.erase(history_.begin(), history_.begin() + nPointsToAdd);
   }
 
-  int targetLane = getLaneNumber(initial.d); /// \todo replace with correct lane number
-
   // find nearest vehicle and set final boundary conditions
+  int targetLane = me.frenet.d; /// \todo replace with correct lane number
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
   double targetTime = 2*targetDist/targetSpeed;/*
@@ -144,51 +241,19 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
       targetTime = std::max(minTime, fabs(targetSpeed - initial.sd)/MAX_ACCELERATION);
     }
   }*/
-  FrenetState final;
-  final.sv = targetSpeed;
-  final.sa = 0;
-  final.sj = 0;
-  final.d = targetLane * LANE_WIDTH + LANE_WIDTH/2.;
-  final.dv = 0;
-  final.da = 0;
-  final.dj = 0;
-  final.t = initial.t + targetTime;
 
-/*
-  // solve for coefficients and generate waypoints
-  std::array<double, 6> coeffs = computePolynomialCoefficients(initial, final);
-  double dt = 0;
-  for(int i = 0; i < nPointsToAdd; ++i)
-  {
-    const double dt2 = dt*dt;
-    const double dt3 = dt2*dt;
-    const double dt4 = dt3*dt;
-    const double dt5 = dt4*dt;
+  // Generate waypoints in frenet coordinates
+  generateFrenetWaypoints(targetSpeed, targetLane, targetTime, nPointsToAdd, history_);
 
-    State fs;
-    fs.qDot = coeffs.sa[0] + coeffs.sa[1]*dt + coeffs.sa[2]*dt2 + coeffs.sa[3]*dt3 + coeffs.sa[4]*dt4 + coeffs.sa[5]*dt5;
-    fs.qDotDot = coeffs.sa[1] + 2*coeffs.sa[2]*dt + 3*coeffs.sa[3]*dt2 + 4*coeffs.sa[4]*dt3 + 5*coeffs.sa[5]*dt4;
-    fs.lonJerk = 2*coeffs.sa[2] + 6*coeffs.sa[3]*dt + 12*coeffs.sa[4]*dt2 + 20*coeffs.sa[5]*dt3;
-    fs.latVel = coeffs.da[0] + coeffs.da[1]*dt + coeffs.da[2]*dt2 + coeffs.da[3]*dt3 + coeffs.da[4]*dt4 + coeffs.da[5]*dt5;
-    fs.latAcc = coeffs.da[1] + 2*coeffs.da[2]*dt + 3*coeffs.da[3]*dt2 + 4*coeffs.da[4]*dt3 + 5*coeffs.da[5]*dt4;
-    fs.latJerk = 2*coeffs.da[2] + 6*coeffs.da[3]*dt + 12*coeffs.da[4]*dt2 + 20*coeffs.da[5]*dt3;
-
-    dt += SIM_DELTA_TIME;
-
-    history_.push_back(fs);
-  }
-
-  // add waypoints to path
+  // get cartesian coordinates of waypoints and add to path
   for(const auto& h : history_)
   {
     FrenetCoord fp;
-    fp.s = h.qDot;
-    fp.d = h.latVel;
+    fp.s = h.s;
+    fp.d = h.d;
     CartesianCoord wp = getXY(fp, wps);
     path.push_back(wp);
   }
-
-  std::cout << me.frenet.s << " " << nPointsToAdd << " " << history_.back().qDot <<  std::endl;*/
   return path;
 }
 
