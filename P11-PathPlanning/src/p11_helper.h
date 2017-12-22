@@ -7,6 +7,8 @@
 #include <cmath>
 #include <vector>
 
+inline double milesPerHr2metersPerSec(double mph) { return mph * 1609.34/3600.; }
+
 inline double deg2rad(double x) { return x * M_PI / 180.; }
 
 inline double rad2deg(double x) { return x * 180. / M_PI; }

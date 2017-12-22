@@ -10,7 +10,9 @@
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner()
 //---------------------------------------------------------------------------------------------------------------------
-{}
+{
+  smoother_.setTimeConstant(1);
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 int TrajectoryPlanner::getLaneNumberFromFrenetD(double d)
@@ -106,7 +108,7 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
 
 //---------------------------------------------------------------------------------------------------------------------
 void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos, double timeDelta,
-                                                unsigned int nPoints, std::deque<FrenetState>& fwps)
+                                                unsigned int nPoints, std::vector<FrenetState>& fwps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   Integrator integrator(SIM_DELTA_TIME);
@@ -180,16 +182,6 @@ void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos,
     }
     fwps.push_back(fs);
   }
-
-  static int j = 0;
-  std::cout << "points" << j++ << " = [";
-  for(const auto& item : fwps)
-  {
-    std::cout << item.t << ", " << item.s << ", " << item.sv << ", " << item.sa << ", " << item.sj
-              << ", " << item.d << ", " << item.dv << ", " << item.da << ", " << item.dj << std::endl;
-  }
-  std::cout << "];";
-
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -223,14 +215,16 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
   }
   else
   {
+    // clear history of points already processed by sim
     history_.erase(history_.begin(), history_.begin() + nPointsToAdd);
   }
 
   // find nearest vehicle and set final boundary conditions
-  int targetLane = me.frenet.d; /// \todo replace with correct lane number
+  int targetLane = getFrenetDFromLaneNumber(0) ; /// \todo replace with correct lane number
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
-  double targetTime = 2*targetDist/targetSpeed;/*
+  double targetTime = 10;//2*targetDist/targetSpeed;
+  /*
   auto vehicleIt = findLeadVehicle(targetLane, me, others, wps); ///\todo use 'me'??
   if( vehicleIt != others.end() )
   {
@@ -246,14 +240,21 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
   generateFrenetWaypoints(targetSpeed, targetLane, targetTime, nPointsToAdd, history_);
 
   // get cartesian coordinates of waypoints and add to path
+  //smoother_.reset();
   for(const auto& h : history_)
   {
     FrenetCoord fp;
     fp.s = h.s;
     fp.d = h.d;
     CartesianCoord wp = getXY(fp, wps);
+    //wp = smoother_.filter(h.t, wp);
     path.push_back(wp);
+/*
+    std::cout << h.t << ", " << h.s << ", " << h.sv << ", " << h.sa << ", " << h.sj
+              << ", " << h.d << ", " << h.dv << ", " << h.da << ", " << h.dj
+              << ", " << wp.x << ", " << wp.y << std::endl;*/
   }
+  std::cout << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
   return path;
 }
 

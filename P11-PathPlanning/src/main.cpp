@@ -82,7 +82,7 @@ int main()
           car.frenet.s = j[1]["s"];
           car.frenet.d = j[1]["d"];
           car.yawAngle = deg2rad(j[1]["yaw"]);
-          car.speed = j[1]["speed"];
+          car.speed = milesPerHr2metersPerSec( j[1]["speed"] );
 
           /// \note: The simulated car doesn't cover all the points passed to the sim in the last iteration. The
           /// path returned here is the waypoints left over from the last time
@@ -129,8 +129,18 @@ int main()
           }
 
           // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+          std::vector<double> next_x_vals;
+          std::vector<double> next_y_vals;
 
+          /// ------------ STUFF --------------------
           CartesianCoordList path = trajPlanner.getPlan(car, otherVehicles, previousPath, trackWaypoints);
+          for(const auto& item : path)
+          {
+            next_x_vals.push_back( item.x );
+            next_y_vals.push_back( item.y );
+          }
+          /// ------------ END STUFF --------------------
+
 /*
           /// ------------ TEST --------------------
           double dist_inc = 0.5;
@@ -144,24 +154,16 @@ int main()
 
             next_x_vals.push_back(xy.x);
             next_y_vals.push_back(xy.y);
-            std::cout << nextFrenetPoint.s << " " << nextFrenetPoint.d << " " << xy.x << " " << xy.y << std::endl;
           }
           /// ------------- END TEST -------------------
 */
-          std::vector<double> next_x_vals;
-          std::vector<double> next_y_vals;
-          for(const auto& item : path)
-          {
-            next_x_vals.push_back( item.x );
-            next_y_vals.push_back( item.y );
-          }
 
           json msgJson;
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
           auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
-          //this_thread::sleep_for(chrono::milliseconds(1000));
+          //std::this_thread::sleep_for(std::chrono::milliseconds(500));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       }

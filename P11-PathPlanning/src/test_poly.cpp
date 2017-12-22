@@ -7,7 +7,7 @@
 int main()
 //---------------------------------------------------------------------------------------------------------------------
 {
-  std::deque<TrajectoryPlanner::FrenetState> history;
+  std::vector<TrajectoryPlanner::FrenetState> history;
 
   int nPoints = 500;
   double timeDelta = 10;

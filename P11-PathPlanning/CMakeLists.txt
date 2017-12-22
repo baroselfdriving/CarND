@@ -29,6 +29,7 @@ set(sources
   src/waypoint.cpp
   src/vehicle.h
   src/integrator.h
+  src/smoother.h
   src/vehicle.cpp)
 add_executable(path_planning src/main.cpp ${sources})
 target_link_libraries(path_planning z ssl uv uWS)
