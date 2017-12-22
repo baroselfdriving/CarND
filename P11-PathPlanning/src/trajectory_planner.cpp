@@ -11,7 +11,7 @@
 TrajectoryPlanner::TrajectoryPlanner()
 //---------------------------------------------------------------------------------------------------------------------
 {
-  smoother_.setTimeConstant(1);
+  smoother_.setTimeConstant(10);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
     fp.s = h.s;
     fp.d = h.d;
     CartesianCoord wp = getXY(fp, wps);
-    //wp = smoother_.filter(h.t, wp);
+    wp = smoother_.filter(h.t, wp);
     path.push_back(wp);
 /*
     std::cout << h.t << ", " << h.s << ", " << h.sv << ", " << h.sa << ", " << h.sj

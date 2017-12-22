@@ -4,7 +4,6 @@
 #include "waypoint.h"
 #include "vehicle.h"
 #include "behaviour.h"
-#include "smoother.h"
 
 #include <cmath>
 #include <array>
@@ -75,7 +74,6 @@ public:
 
 private:
   std::vector<FrenetState> history_;
-  Smoother smoother_;
 };
 
 
