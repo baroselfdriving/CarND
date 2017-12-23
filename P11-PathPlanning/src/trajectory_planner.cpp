@@ -8,7 +8,8 @@
 #include <iostream>
 
 //---------------------------------------------------------------------------------------------------------------------
-TrajectoryPlanner::TrajectoryPlanner()
+TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
+  : trackWaypoints_(wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
 }
@@ -28,8 +29,7 @@ double TrajectoryPlanner::getFrenetDFromLaneNumber(int lane)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const Vehicle& me,
-                                                               const VehicleList& vehicles, const WaypointList& wps)
+VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const Vehicle& me, const VehicleList& vehicles)
 //---------------------------------------------------------------------------------------------------------------------
 {
   // Lead vehicle is the nearest one ahead of me in the specified lane
@@ -65,7 +65,7 @@ VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const V
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const PolyState& initial, const PolyState& final)
+std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const PolynomialConstraint& initial, const PolynomialConstraint& final)
 //---------------------------------------------------------------------------------------------------------------------
 {
   // Solve for ceofficients of jerk minimising polynomial as described in term3 - trajectory generation lessons
@@ -106,18 +106,18 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos, double timeDelta,
-                                                unsigned int nPoints, std::vector<FrenetState>& fwps)
+void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd,
+                                          StateList& fwps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   Integrator integrator(SIM_DELTA_TIME);
 
   double s0 = 0;
   double t0 = 0;
-  PolyState sInitial = {0};
-  PolyState dInitial = {0};
-  PolyState sFinal;
-  PolyState dFinal;
+  PolynomialConstraint sInitial = {0};
+  PolynomialConstraint dInitial = {0};
+  PolynomialConstraint sFinal;
+  PolynomialConstraint dFinal;
 
   if(fwps.size() > 0)
   {
@@ -150,14 +150,14 @@ void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos,
 
 
   double dt = 0;
-  for(unsigned int i = 0; i < nPoints; ++i)
+  for(size_t i = 0; i < nPointsToAdd; ++i)
   {
     const double dt2 = dt*dt;
     const double dt3 = dt2*dt;
     const double dt4 = dt3*dt;
     const double dt5 = dt4*dt;
 
-    FrenetState fs;
+    State fs;
     fs.sv = sCoeffs[0] + sCoeffs[1]*dt + sCoeffs[2]*dt2 + sCoeffs[3]*dt3 + sCoeffs[4]*dt4 + sCoeffs[5]*dt5;
     fs.sa = sCoeffs[1] + 2*sCoeffs[2]*dt + 3*sCoeffs[3]*dt2 + 4*sCoeffs[4]*dt3 + 5*sCoeffs[5]*dt4;
     fs.sj = 2*sCoeffs[2] + 6*sCoeffs[3]*dt + 12*sCoeffs[4]*dt2 + 20*sCoeffs[5]*dt3;
@@ -173,32 +173,61 @@ void TrajectoryPlanner::generateFrenetWaypoints(double longSpeed, double latPos,
     if(i == 0)
     {
       fs.s = s0;
-      integrator.reset(fs.s, 0);//fs.sv);
+      integrator.reset(fs.s, fs.sv);
     }
     else
     {
       fs.s = integrator.integrate(fs.sv);
     }
+
+    FrenetPose fp;
+    fp.s = fs.s;
+    fp.d = fs.d;
+    fs.pose = getXY(fp, trackWaypoints_);
+
     fwps.push_back(fs);
   }
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
-                                              const CartesianCoordList& myPrevPath, const WaypointList& wps)
+void TrajectoryPlanner::smoothenTrajectory(size_t index, StateList& history, CartesianPoseList& coords)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  /// \todo
+  /// - Add nearest waypoints to make up the path
+  /// - Smooth the path with spline
+  // get cartesian coordinates of waypoints and add to path
+  for(StateList::iterator it = (history.begin()+index); it < history.end(); ++it)
+  {
+    FrenetPose fp;
+    fp.s = it->s;
+    fp.d = it->d;
+    coords.push_back(it->pose);
+/*
+    std::cout << h.t << ", " << h.s << ", " << h.sv << ", " << h.sa << ", " << h.sj
+              << ", " << h.d << ", " << h.dv << ", " << h.da << ", " << h.dj
+              << ", " << wp.x << ", " << wp.y << std::endl;*/
+  }
+  //std::cout << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
+
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
+                                             const CartesianPoseList& myPrevPath, const FrenetPose& prevPathEnd)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const size_t myPrevPathSz = myPrevPath.size();
   size_t nPointsToAdd = SIM_NUM_WAYPOINTS - myPrevPathSz;
-  CartesianCoordList path;//= myPrevPath;
+  CartesianPoseList path = myPrevPath;
 
   // set initial boundary conditions
   if(myPrevPathSz == 0)
   {
-    // set to car coordinates at start
     history_.clear();
 
-    FrenetState initial;
+    // set to car coordinates at start
+    State initial;
     initial.s = me.frenet.s;
     initial.sv = me.speed;
     initial.sa = 0;
@@ -208,6 +237,9 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
     initial.da = 0;
     initial.dj = 0;
     initial.t = 0;
+    initial.pose.x = me.position.x;
+    initial.pose.y = me.position.y;
+    initial.pose.yawAngle = me.yawAngle;
 
     history_.push_back(initial);
     nPointsToAdd -= 1;
@@ -224,36 +256,25 @@ CartesianCoordList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLi
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
   double targetTime = 10;//2*targetDist/targetSpeed;
-
+/*
   auto vehicleIt = findLeadVehicle(targetLane, me, others, wps);  ///\todo use 'me'??
   if( vehicleIt != others.end() )
   {
-    targetDist = std::min(targetDist, vehicleIt->frenet.s - SAFE_FOLLOW_DISTANCE);
+    targetDist = std::min(targetDist, distance(vehicleIt->position, me.position) - SAFE_FOLLOW_DISTANCE); ///\todo use 'me'?
     if(targetDist < SAFE_MANOEUVRE_DISTANCE)
     {
       targetSpeed = vehicleIt->speed; // match speed of vehicle in front
-      targetTime = std::max(targetTime, fabs(targetSpeed - me.speed)/MAX_ACCELERATION);
+      targetTime = fabs(targetSpeed - me.speed)/MAX_ACCELERATION;
     }
+    std::cout << targetDist << " " << vehicleIt->speed << " " << targetSpeed << " " << targetTime << std::endl;
   }
-  std::cout << targetDist << " " << targetSpeed << " " << targetTime << std::endl;
-
+*/
   // Generate waypoints in frenet coordinates
-  generateFrenetWaypoints(targetSpeed, targetD, targetTime, nPointsToAdd, history_);
+  computeTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd, history_);
 
-  // get cartesian coordinates of waypoints and add to path
-  for(const auto& h : history_)
-  {
-    FrenetCoord fp;
-    fp.s = h.s;
-    fp.d = h.d;
-    CartesianCoord wp = getXY(fp, wps);
-    path.push_back(wp);
-/*
-    std::cout << h.t << ", " << h.s << ", " << h.sv << ", " << h.sa << ", " << h.sj
-              << ", " << h.d << ", " << h.dv << ", " << h.da << ", " << h.dj
-              << ", " << wp.x << ", " << wp.y << std::endl;*/
-  }
-  //std::cout << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
+  // Convert to cartesian path
+  smoothenTrajectory(myPrevPathSz+1, history_, path);
+
   return path;
 }
 

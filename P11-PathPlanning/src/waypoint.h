@@ -4,16 +4,17 @@
 #include <vector>
 
 /// 2-D cartesian coordinate
-struct CartesianCoord
+struct CartesianPose
 {
   double x;
   double y;
+  double yawAngle;
 };
 
-using CartesianCoordList = std::vector<CartesianCoord>;
+using CartesianPoseList = std::vector<CartesianPose>;
 
 /// Frenet coordinates
-struct FrenetCoord
+struct FrenetPose
 {
   double s;  //!< Frenet 's' value
   double d;  //!< Frenet 'd' value
@@ -24,8 +25,8 @@ struct FrenetCoord
 /// Waypoint description
 struct Waypoint
 {
-  CartesianCoord point; //!< cartesian coordinates in global (map) frame
-  FrenetCoord frenet; //!< frenet coordinates for point p on the track
+  CartesianPose pose; //!< cartesian coordinates in global (map) frame
+  FrenetPose frenet; //!< frenet coordinates for point p on the track
 };
 
 using WaypointList = std::vector<Waypoint>;

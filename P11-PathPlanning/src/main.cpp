@@ -32,8 +32,9 @@ int main()
   {
     std::istringstream iss(line);
     Waypoint wp;
-    iss >> wp.point.x;
-    iss >> wp.point.y;
+    iss >> wp.pose.x;
+    iss >> wp.pose.y;
+    wp.pose.yawAngle = 0; // undefined
     iss >> wp.frenet.s;
     iss >> wp.frenet.dx;
     iss >> wp.frenet.dy;
@@ -47,7 +48,7 @@ int main()
     return -1;
   }
 
-  TrajectoryPlanner trajPlanner;
+  TrajectoryPlanner trajPlanner(trackWaypoints);
 
   uWS::Hub h;
   h.onMessage([&trackWaypoints, &trajPlanner](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
@@ -92,8 +93,9 @@ int main()
           auto previousPathY = j[1]["previous_path_y"];
 
           // Previous path's end s and d values
-          double previousPathEndS = j[1]["end_path_s"];
-          double previousPathEndD = j[1]["end_path_d"];
+          FrenetPose prevPathEnd;
+          prevPathEnd.s = j[1]["end_path_s"];
+          prevPathEnd.d = j[1]["end_path_d"];
           size_t previousPathSz = previousPathX.size();
           if( previousPathSz != previousPathY.size())
           {
@@ -101,10 +103,10 @@ int main()
             return -1;
           }
 
-          CartesianCoordList previousPath;
+          CartesianPoseList previousPath;
           for(unsigned int i = 0; i < previousPathSz; ++i)
           {
-            CartesianCoord p;
+            CartesianPose p;
             p.x = previousPathX[i];
             p.y = previousPathY[i];
             previousPath.push_back(p);
@@ -133,7 +135,7 @@ int main()
           std::vector<double> next_y_vals;
 
           /// ------------ STUFF --------------------
-          CartesianCoordList path = trajPlanner.getPlan(car, otherVehicles, previousPath, trackWaypoints);
+          CartesianPoseList path = trajPlanner.getPlan(car, otherVehicles, previousPath, prevPathEnd);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );

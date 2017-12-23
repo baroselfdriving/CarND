@@ -15,21 +15,21 @@ inline double rad2deg(double x) { return x * 180. / M_PI; }
 
 inline double distance(double x1, double y1, double x2, double y2) { return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)); }
 
-inline double distance(const CartesianCoord& p1, const CartesianCoord& p2) { return distance(p1.x, p1.y, p2.x, p2.y); }
+inline double distance(const CartesianPose& p1, const CartesianPose& p2) { return distance(p1.x, p1.y, p2.x, p2.y); }
 
 /// Checks if the SocketIO event has JSON data.
 /// If there is data the JSON object in string format will be returned,
 /// else the empty string "" will be returned.
 std::string hasJsonData(std::string s);
 
-WaypointList::const_iterator ClosestWaypoint(const CartesianCoord& p, const WaypointList& wps);
+WaypointList::const_iterator ClosestWaypoint(const CartesianPose& p, const WaypointList& wps);
 
-WaypointList::const_iterator NextWaypoint(const CartesianCoord& p, double theta, const WaypointList& wps);
+WaypointList::const_iterator NextWaypoint(const CartesianPose& p, double theta, const WaypointList& wps);
 
 /// Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-FrenetCoord getFrenet(const CartesianCoord& p, double theta, const WaypointList& wps);
+FrenetPose getFrenet(const CartesianPose& p, double theta, const WaypointList& wps);
 
 /// Transform from Frenet s,d coordinates to Cartesian x,y
-CartesianCoord getXY(const FrenetCoord& fp, const WaypointList& wps);
+CartesianPose getXY(const FrenetPose& fp, const WaypointList& wps);
 
 #endif // P11_HELPER_H

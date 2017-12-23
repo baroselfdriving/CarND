@@ -8,9 +8,9 @@ struct Vehicle
 {
   // Information common to all simulated vehicles
   int id;
-  CartesianCoord position; //!< position in map frame
-  CartesianCoord velocity; //!< velocity in map frame
-  FrenetCoord frenet;
+  CartesianPose position; //!< position in map frame
+  CartesianPose velocity; //!< velocity in map frame
+  FrenetPose frenet;
 
   // Information useful for the our car
   double yawAngle;

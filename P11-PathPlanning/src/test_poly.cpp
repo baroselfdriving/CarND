@@ -7,18 +7,18 @@
 int main()
 //---------------------------------------------------------------------------------------------------------------------
 {
-  std::vector<TrajectoryPlanner::FrenetState> history;
+  std::vector<TrajectoryPlanner::State> history;
 
   unsigned int nPoints = 500;
   double timeDelta = 10;
   double longSpeed = 25;
   double latPos = 6;
 
-  TrajectoryPlanner::generateFrenetWaypoints(longSpeed, latPos, timeDelta, nPoints, history);
+  TrajectoryPlanner::computeTrajectory(longSpeed, latPos, timeDelta, nPoints, history);
 
   nPoints = 250;
   history.erase(history.begin(), history.begin()+nPoints);
-  TrajectoryPlanner::generateFrenetWaypoints(longSpeed, latPos, timeDelta, nPoints, history);
+  TrajectoryPlanner::computeTrajectory(longSpeed, latPos, timeDelta, nPoints, history);
 
   return 0;
 }

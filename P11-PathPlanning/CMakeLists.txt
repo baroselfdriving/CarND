@@ -34,4 +34,3 @@ set(sources
 add_executable(path_planning src/main.cpp ${sources})
 target_link_libraries(path_planning z ssl uv uWS)
 
-add_executable(test_poly src/test_poly.cpp ${sources})
