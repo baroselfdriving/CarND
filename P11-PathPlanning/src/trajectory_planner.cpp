@@ -1,6 +1,7 @@
 #include "trajectory_planner.h"
 #include "p11_helper.h"
 #include "integrator.h"
+#include "spline.h"
 
 #include <limits>
 #include <Eigen/Core>
@@ -106,8 +107,7 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd,
-                                          StateList& fwps)
+void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd)
 //---------------------------------------------------------------------------------------------------------------------
 {
   Integrator integrator(SIM_DELTA_TIME);
@@ -119,9 +119,10 @@ void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, doubl
   PolynomialConstraint sFinal;
   PolynomialConstraint dFinal;
 
-  if(fwps.size() > 0)
+  // set initial conditions if available
+  if(history_.size() > 0)
   {
-    const auto& it = fwps.back();
+    const auto& it = history_.back();
     s0 = it.s;
     t0 = it.t;
     sInitial.q = it.sv;
@@ -135,6 +136,7 @@ void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, doubl
     dInitial.t = it.t;
   }
 
+  // set final conditions
   sFinal.q = longSpeed;
   sFinal.qDot = 0;
   sFinal.qDotDot = 0;
@@ -145,10 +147,11 @@ void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, doubl
   dFinal.qDotDot = 0;
   dFinal.t = dInitial.t + timeDelta;
 
+  // Fit polynomial between end points
   const std::array<double, 6> sCoeffs = computePolynomialCoefficients(sInitial, sFinal);
   const std::array<double, 6> dCoeffs = computePolynomialCoefficients(dInitial, dFinal);
 
-
+  // Generate intermediate waypoints
   double dt = 0;
   for(size_t i = 0; i < nPointsToAdd; ++i)
   {
@@ -180,12 +183,9 @@ void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, doubl
       fs.s = integrator.integrate(fs.sv);
     }
 
-    FrenetPose fp;
-    fp.s = fs.s;
-    fp.d = fs.d;
-    fs.pose = getXY(fp, trackWaypoints_);
+    fs.pose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
-    fwps.push_back(fs);
+    history_.push_back(fs);
   }
 }
 
@@ -193,20 +193,48 @@ void TrajectoryPlanner::computeTrajectory(double longSpeed, double latPos, doubl
 void TrajectoryPlanner::smoothenTrajectory(size_t index, StateList& history, CartesianPoseList& coords)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  /// \todo
-  /// - Add nearest waypoints to make up the path
-  /// - Smooth the path with spline
-  // get cartesian coordinates of waypoints and add to path
-  for(StateList::iterator it = (history.begin()+index); it < history.end(); ++it)
+  /*
+  assert(index > 1);
+  assert(index < history.size());
+
+  // smoothen the cartesian coordinates
+
+  /// - Find frame at the origin of the segment
+  /// - transform all points to coordinates of segment frame
+  /// - fit spline. get cartesian coordinates in segment frame
+  /// - transform cartesian coords into global frame
+
+  tk::spline splinator;
+  CartesianPoseList segment;
+  const CartesianPose originPose = (history.begin() + index - 1)->pose;
+  const double cosa = cos(originPose.heading);
+  const double sina = sin(originPose.heading);
+  for(StateList::iterator it = (history.begin()+index -2); it < history.end(); ++it)
   {
-    FrenetPose fp;
-    fp.s = it->s;
-    fp.d = it->d;
+    // transform to segment frame and set
+    CartesianPose p;
+    p.x = cosa * (it->pose.x - originPose.x) + sina * (it->pose.y - originPose.y);
+    p.y = -sina * (it->pose.x - originPose.x) + cosa * (it->pose.y - originPose.y);
+    p.heading = it->pose.heading - originPose.heading;
+
+    segment.push_back(p);
+  }
+  splinator.set_points(segment);
+  CartesianPoseList::iterator segmentIt = segment.begin();
+  */
+  for(StateList::iterator it = (history.begin()+index-1); it < history.end(); ++it)
+  {
+    // Get smoothed coordinate
+    //CartesianPose p;
+    //p.x = segmentIt->x;
+    //p.y = splinator(p.x);
+
+    // transform to global frame
+    //it->pose.x = originPose.x + cosa * p.x - sina * p.y;
+    //it->pose.y = originPose.y + sina * p.x + cosa * p.y;
+    //it->pose.heading = segmentIt->heading + originPose.heading;
+    //segmentIt++;
     coords.push_back(it->pose);
-/*
-    std::cout << h.t << ", " << h.s << ", " << h.sv << ", " << h.sa << ", " << h.sj
-              << ", " << h.d << ", " << h.dv << ", " << h.da << ", " << h.dj
-              << ", " << wp.x << ", " << wp.y << std::endl;*/
   }
   //std::cout << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
 
@@ -214,7 +242,7 @@ void TrajectoryPlanner::smoothenTrajectory(size_t index, StateList& history, Car
 
 //---------------------------------------------------------------------------------------------------------------------
 CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
-                                             const CartesianPoseList& myPrevPath, const FrenetPose& prevPathEnd)
+                                             const CartesianPoseList& myPrevPath, const FrenetPoint& prevPathEnd)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const size_t myPrevPathSz = myPrevPath.size();
@@ -222,7 +250,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   CartesianPoseList path = myPrevPath;
 
   // set initial boundary conditions
-  if(myPrevPathSz == 0)
+  if(myPrevPathSz < 1)
   {
     history_.clear();
 
@@ -239,10 +267,29 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     initial.t = 0;
     initial.pose.x = me.position.x;
     initial.pose.y = me.position.y;
-    initial.pose.yawAngle = me.yawAngle;
+    initial.pose.heading = me.yawAngle;
 
     history_.push_back(initial);
     nPointsToAdd -= 1;
+
+/*
+    // set another point just in front of the car to set starting direction of travel
+    FrenetPoint nextFp = getFrenet(initial.pose, trackWaypoints_);
+
+    initial.s = nextFp.s;
+    initial.sv = me.speed;
+    initial.sa = 0;
+    initial.sj = 0;
+    initial.d = nextFp.d;
+    initial.dv = 0;
+    initial.da = 0;
+    initial.dj = 0;
+    initial.t = 0;
+    initial.pose = getCartesianFromFrenet(nextFp.s, nextFp.d, trackWaypoints_);
+    initial.pose.heading = me.yawAngle;
+
+    history_.push_back(initial);
+    nPointsToAdd -= 1;*/
   }
   else
   {
@@ -270,9 +317,9 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   }
 */
   // Generate waypoints in frenet coordinates
-  computeTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd, history_);
+  updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd);
 
-  // Convert to cartesian path
+  // Smooth the cartesian path so generated
   smoothenTrajectory(myPrevPathSz+1, history_, path);
 
   return path;

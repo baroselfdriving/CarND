@@ -28,7 +28,7 @@ WaypointList::const_iterator ClosestWaypoint(const CartesianPose& p, const Waypo
   WaypointList::const_iterator itNearest;
   for(WaypointList::const_iterator it = wps.begin(); it != wps.end(); ++it)
   {
-    double dist = distance(p, it->pose);
+    double dist = distance(p, it->point);
     if(dist < nearest)
     {
       nearest = dist;
@@ -39,17 +39,17 @@ WaypointList::const_iterator ClosestWaypoint(const CartesianPose& p, const Waypo
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-WaypointList::const_iterator NextWaypoint(const CartesianPose& p, double theta, const WaypointList& wps)
+WaypointList::const_iterator NextWaypoint(const CartesianPose& p, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   auto closestWaypoint = ClosestWaypoint(p, wps);
 
-  double mapX = closestWaypoint->pose.x;
-  double mapY = closestWaypoint->pose.y;
+  double mapX = closestWaypoint->point.x;
+  double mapY = closestWaypoint->point.y;
 
-  double heading = atan2((mapY - p.y),(mapX - p.x));
+  double track = atan2((mapY - p.y),(mapX - p.x));
 
-  double angle = fabs(theta-heading);
+  double angle = fabs(p.heading - track);
   angle = std::min(2*M_PI - angle, angle);
   if(angle > M_PI/4) // not within 45 degrees of heading
   {
@@ -64,29 +64,29 @@ WaypointList::const_iterator NextWaypoint(const CartesianPose& p, double theta, 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-FrenetPose getFrenet(const CartesianPose& p, double theta, const WaypointList& wps)
+FrenetPoint getFrenet(const CartesianPose& p, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  auto nextWp = NextWaypoint(p, theta, wps);
+  auto nextWp = NextWaypoint(p, wps);
   auto prevWp = ( (nextWp == wps.begin()) ? (wps.end()-1) : (nextWp-1) );
 
-  double n_x = nextWp->pose.x - prevWp->pose.x;
-  double n_y = nextWp->pose.y - prevWp->pose.y;
-  double x_x = p.x - prevWp->pose.x;
-  double x_y = p.y - prevWp->pose.y;
+  double n_x = nextWp->point.x - prevWp->point.x;
+  double n_y = nextWp->point.y - prevWp->point.y;
+  double x_x = p.x - prevWp->point.x;
+  double x_y = p.y - prevWp->point.y;
 
   // find the projection of x onto n
   double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
   double proj_x = proj_norm*n_x;
   double proj_y = proj_norm*n_y;
 
-  FrenetPose fp;
+  FrenetPoint fp;
   fp.d = distance(x_x,x_y,proj_x,proj_y);
 
   //see if d value is positive or negative by comparing it to a center point
 
-  double center_x = 1000 - prevWp->pose.x;
-  double center_y = 2000 - prevWp->pose.y;
+  double center_x = 1000 - prevWp->point.x;
+  double center_y = 2000 - prevWp->point.y;
   double centerToPos = distance(center_x,center_y,x_x,x_y);
   double centerToRef = distance(center_x,center_y,proj_x,proj_y);
 
@@ -100,7 +100,7 @@ FrenetPose getFrenet(const CartesianPose& p, double theta, const WaypointList& w
   for(WaypointList::const_iterator it = wps.begin(); it != (prevWp-1); ++it)
   {
     WaypointList::const_iterator itNext = it+1;
-    fp.s += distance(it->pose, itNext->pose);
+    fp.s += distance(it->point, itNext->point);
   }
   fp.s += distance(0, 0, proj_x, proj_y);
 
@@ -111,11 +111,11 @@ FrenetPose getFrenet(const CartesianPose& p, double theta, const WaypointList& w
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianPose getXY(const FrenetPose& fp, const WaypointList& wps)
+CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
   WaypointList::const_iterator prev_wp = wps.begin();
-  while(fp.s > (prev_wp+1)->frenet.s && (prev_wp != wps.end()-1) )
+  while(s > (prev_wp+1)->frenet.s && (prev_wp != wps.end()-1) )
   {
     prev_wp++;
   }
@@ -126,20 +126,19 @@ CartesianPose getXY(const FrenetPose& fp, const WaypointList& wps)
     wp2 = wps.begin();
   }
 
-  const double heading = atan2((wp2->pose.y - prev_wp->pose.y),(wp2->pose.x - prev_wp->pose.x));
+  const double heading = atan2((wp2->point.y - prev_wp->point.y),(wp2->point.x - prev_wp->point.x));
 
   // the x,y,s along the segment
-  double seg_s = (fp.s - prev_wp->frenet.s);
-  double seg_x = prev_wp->pose.x + seg_s*cos(heading);
-  double seg_y = prev_wp->pose.y + seg_s*sin(heading);
+  double seg_s = (s - prev_wp->frenet.s);
+  double seg_x = prev_wp->point.x + seg_s*cos(heading);
+  double seg_y = prev_wp->point.y + seg_s*sin(heading);
 
   double perp_heading = heading-M_PI/2;
 
   CartesianPose p;
-  p.x = seg_x + fp.d * cos(perp_heading);
-  p.y = seg_y + fp.d * sin(perp_heading);
-  p.yawAngle = heading;
+  p.x = seg_x + d * cos(perp_heading);
+  p.y = seg_y + d * sin(perp_heading);
+  p.heading = heading;
 
   return p;
-
 }

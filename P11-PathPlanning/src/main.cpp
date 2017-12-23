@@ -27,14 +27,16 @@ int main()
     return -1;
   }
   WaypointList trackWaypoints;
+  CartesianPose prevPt = {0};
   std::string line;
   while (std::getline(fs, line))
   {
     std::istringstream iss(line);
     Waypoint wp;
-    iss >> wp.pose.x;
-    iss >> wp.pose.y;
-    wp.pose.yawAngle = 0; // undefined
+    iss >> wp.point.x;
+    iss >> wp.point.y;
+    wp.point.heading = atan2((wp.point.y - prevPt.y),(wp.point.x - prevPt.x));
+    prevPt = wp.point;
     iss >> wp.frenet.s;
     iss >> wp.frenet.dx;
     iss >> wp.frenet.dy;
@@ -93,7 +95,7 @@ int main()
           auto previousPathY = j[1]["previous_path_y"];
 
           // Previous path's end s and d values
-          FrenetPose prevPathEnd;
+          FrenetPoint prevPathEnd;
           prevPathEnd.s = j[1]["end_path_s"];
           prevPathEnd.d = j[1]["end_path_d"];
           size_t previousPathSz = previousPathX.size();

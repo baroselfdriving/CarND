@@ -8,13 +8,13 @@ struct CartesianPose
 {
   double x;
   double y;
-  double yawAngle;
+  double heading;
 };
 
 using CartesianPoseList = std::vector<CartesianPose>;
 
 /// Frenet coordinates
-struct FrenetPose
+struct FrenetPoint
 {
   double s;  //!< Frenet 's' value
   double d;  //!< Frenet 'd' value
@@ -25,8 +25,8 @@ struct FrenetPose
 /// Waypoint description
 struct Waypoint
 {
-  CartesianPose pose; //!< cartesian coordinates in global (map) frame
-  FrenetPose frenet; //!< frenet coordinates for point p on the track
+  CartesianPose point; //!< cartesian coordinates in global (map) frame
+  FrenetPoint frenet; //!< frenet coordinates for point p on the track
 };
 
 using WaypointList = std::vector<Waypoint>;

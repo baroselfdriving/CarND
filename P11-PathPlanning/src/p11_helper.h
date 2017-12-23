@@ -24,12 +24,12 @@ std::string hasJsonData(std::string s);
 
 WaypointList::const_iterator ClosestWaypoint(const CartesianPose& p, const WaypointList& wps);
 
-WaypointList::const_iterator NextWaypoint(const CartesianPose& p, double theta, const WaypointList& wps);
+WaypointList::const_iterator NextWaypoint(const CartesianPose& p, const WaypointList& wps);
 
 /// Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-FrenetPose getFrenet(const CartesianPose& p, double theta, const WaypointList& wps);
+FrenetPoint getFrenet(const CartesianPose& p, const WaypointList& wps);
 
 /// Transform from Frenet s,d coordinates to Cartesian x,y
-CartesianPose getXY(const FrenetPose& fp, const WaypointList& wps);
+CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps);
 
 #endif // P11_HELPER_H

@@ -54,7 +54,7 @@ public:
 
   /// Call every cycle to generate a list of waypoints for the car to follow
   CartesianPoseList getPlan(const Vehicle& me, const VehicleList& others,
-                            const CartesianPoseList& myPrevPath, const FrenetPose& prevPathEnd);
+                            const CartesianPoseList& myPrevPath, const FrenetPoint& prevPathEnd);
 
 //private:
   struct PolynomialConstraint
@@ -71,8 +71,7 @@ public:
 
   /// Generate first nPoints set of waypoints in frenet coordinates given final desired
   /// longitudinal speed, lateral position, and a time duration to achieve the final state in.
-  void computeTrajectory(double longSpeed, double latPos, double timeDelta,
-                                      size_t nPointsToAdd, StateList& fwps);
+  void updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd);
 
 
   /// Given frenet trajectory, update cartesian trajectory

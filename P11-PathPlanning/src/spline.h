@@ -23,6 +23,9 @@
  *
  */
 
+/**
+  * slightly modified by Vilas Chitrakaran to take a list of CartesianPose as input
+  */
 
 #ifndef TK_SPLINE_H
 #define TK_SPLINE_H
@@ -32,6 +35,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "waypoint.h"
 
 // unnamed namespace only because the implementation is in this
 // header file and we don't want to export symbols to the obj files
@@ -86,7 +90,7 @@ public:
     };
 
 private:
-    std::vector<double> m_x,m_y;            // x,y coordinates of points
+    CartesianPoseList m_points;            // x,y coordinates of points
     // interpolation parameters
     // f(x) = a*(x-x_i)^3 + b*(x-x_i)^2 + c*(x-x_i) + y_i
     std::vector<double> m_a,m_b,m_c;        // spline coefficients
@@ -108,8 +112,7 @@ public:
     void set_boundary(bd_type left, double left_value,
                       bd_type right, double right_value,
                       bool force_linear_extrapolation=false);
-    void set_points(const std::vector<double>& x,
-                    const std::vector<double>& y, bool cubic_spline=true);
+    void set_points(const CartesianPoseList& points, bool cubic_spline=true);
     double operator() (double x) const;
 };
 
@@ -272,7 +275,7 @@ void spline::set_boundary(spline::bd_type left, double left_value,
                           spline::bd_type right, double right_value,
                           bool force_linear_extrapolation)
 {
-    assert(m_x.size()==0);          // set_points() must not have happened yet
+    assert(m_points.size()==0);          // set_points() must not have happened yet
     m_left=left;
     m_right=right;
     m_left_value=left_value;
@@ -281,17 +284,16 @@ void spline::set_boundary(spline::bd_type left, double left_value,
 }
 
 
-void spline::set_points(const std::vector<double>& x,
-                        const std::vector<double>& y, bool cubic_spline)
+void spline::set_points(const CartesianPoseList& points, bool cubic_spline)
 {
-    assert(x.size()==y.size());
-    assert(x.size()>2);
-    m_x=x;
-    m_y=y;
-    int   n=x.size();
+    assert(points.size()>2);
+    m_points = points;
+
+    int   n=points.size();
     // TODO: maybe sort x and y, rather than returning an error
-    for(int i=0; i<n-1; i++) {
-        assert(m_x[i]<m_x[i+1]);
+    for(size_t i=0; i<n-1; i++) {
+      /// \todo: uncomment this
+        //assert(m_points[i].x < m_points[i+1].x);
     }
 
     if(cubic_spline==true) { // cubic spline interpolation
@@ -300,10 +302,10 @@ void spline::set_points(const std::vector<double>& x,
         band_matrix A(n,1,1);
         std::vector<double>  rhs(n);
         for(int i=1; i<n-1; i++) {
-            A(i,i-1)=1.0/3.0*(x[i]-x[i-1]);
-            A(i,i)=2.0/3.0*(x[i+1]-x[i-1]);
-            A(i,i+1)=1.0/3.0*(x[i+1]-x[i]);
-            rhs[i]=(y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1]);
+            A(i,i-1)=1.0/3.0*(points[i].x-points[i-1].x);
+            A(i,i)=2.0/3.0*(points[i+1].x-points[i-1].x);
+            A(i,i+1)=1.0/3.0*(points[i+1].x-points[i].x);
+            rhs[i]=(points[i+1].y-points[i].y)/(points[i+1].x-points[i].x) - (points[i].y-points[i-1].y)/(points[i].x-points[i-1].x);
         }
         // boundary conditions
         if(m_left == spline::second_deriv) {
@@ -314,9 +316,9 @@ void spline::set_points(const std::vector<double>& x,
         } else if(m_left == spline::first_deriv) {
             // c[0] = f', needs to be re-expressed in terms of b:
             // (2b[0]+b[1])(x[1]-x[0]) = 3 ((y[1]-y[0])/(x[1]-x[0]) - f')
-            A(0,0)=2.0*(x[1]-x[0]);
-            A(0,1)=1.0*(x[1]-x[0]);
-            rhs[0]=3.0*((y[1]-y[0])/(x[1]-x[0])-m_left_value);
+            A(0,0)=2.0*(points[1].x-points[0].x);
+            A(0,1)=1.0*(points[1].x-points[0].x);
+            rhs[0]=3.0*((points[1].y-points[0].y)/(points[1].x-points[0].x)-m_left_value);
         } else {
             assert(false);
         }
@@ -329,9 +331,9 @@ void spline::set_points(const std::vector<double>& x,
             // c[n-1] = f', needs to be re-expressed in terms of b:
             // (b[n-2]+2b[n-1])(x[n-1]-x[n-2])
             // = 3 (f' - (y[n-1]-y[n-2])/(x[n-1]-x[n-2]))
-            A(n-1,n-1)=2.0*(x[n-1]-x[n-2]);
-            A(n-1,n-2)=1.0*(x[n-1]-x[n-2]);
-            rhs[n-1]=3.0*(m_right_value-(y[n-1]-y[n-2])/(x[n-1]-x[n-2]));
+            A(n-1,n-1)=2.0*(points[n-1].x-points[n-2].x);
+            A(n-1,n-2)=1.0*(points[n-1].x-points[n-2].x);
+            rhs[n-1]=3.0*(m_right_value-(points[n-1].y-points[n-2].y)/(points[n-1].x-points[n-2].x));
         } else {
             assert(false);
         }
@@ -343,9 +345,9 @@ void spline::set_points(const std::vector<double>& x,
         m_a.resize(n);
         m_c.resize(n);
         for(int i=0; i<n-1; i++) {
-            m_a[i]=1.0/3.0*(m_b[i+1]-m_b[i])/(x[i+1]-x[i]);
-            m_c[i]=(y[i+1]-y[i])/(x[i+1]-x[i])
-                   - 1.0/3.0*(2.0*m_b[i]+m_b[i+1])*(x[i+1]-x[i]);
+            m_a[i]=1.0/3.0*(m_b[i+1]-m_b[i])/(points[i+1].x-points[i].x);
+            m_c[i]=(points[i+1].y-points[i].y)/(points[i+1].x-points[i].x)
+                   - 1.0/3.0*(2.0*m_b[i]+m_b[i+1])*(points[i+1].x-points[i].x);
         }
     } else { // linear interpolation
         m_a.resize(n);
@@ -354,7 +356,7 @@ void spline::set_points(const std::vector<double>& x,
         for(int i=0; i<n-1; i++) {
             m_a[i]=0.0;
             m_b[i]=0.0;
-            m_c[i]=(m_y[i+1]-m_y[i])/(m_x[i+1]-m_x[i]);
+            m_c[i]=(m_points[i+1].y-m_points[i].y)/(m_points[i+1].x-m_points[i].x);
         }
     }
 
@@ -364,7 +366,7 @@ void spline::set_points(const std::vector<double>& x,
 
     // for the right extrapolation coefficients
     // f_{n-1}(x) = b*(x-x_{n-1})^2 + c*(x-x_{n-1}) + y_{n-1}
-    double h=x[n-1]-x[n-2];
+    double h=points[n-1].x-points[n-2].x;
     // m_b[n-1] is determined by the boundary condition
     m_a[n-1]=0.0;
     m_c[n-1]=3.0*m_a[n-2]*h*h+2.0*m_b[n-2]*h+m_c[n-2];   // = f'_{n-2}(x_{n-1})
@@ -374,23 +376,24 @@ void spline::set_points(const std::vector<double>& x,
 
 double spline::operator() (double x) const
 {
-    size_t n=m_x.size();
+    CartesianPose dummy; dummy.x = x; dummy.y = 0;
+    size_t n=m_points.size();
     // find the closest point m_x[idx] < x, idx=0 even if x<m_x[0]
-    std::vector<double>::const_iterator it;
-    it=std::lower_bound(m_x.begin(),m_x.end(),x);
-    int idx=std::max( int(it-m_x.begin())-1, 0);
+    CartesianPoseList::const_iterator it;
+    it = std::lower_bound(m_points.begin(), m_points.end(), dummy, [](const CartesianPose& lhs, const CartesianPose& rhs) -> bool { return lhs.x < rhs.x; });
+    int idx=std::max( int(it-m_points.begin())-1, 0);
 
-    double h=x-m_x[idx];
+    double h=x-m_points[idx].x;
     double interpol;
-    if(x<m_x[0]) {
+    if(x<m_points[0].x) {
         // extrapolation to the left
-        interpol=(m_b0*h + m_c0)*h + m_y[0];
-    } else if(x>m_x[n-1]) {
+        interpol=(m_b0*h + m_c0)*h + m_points[0].y;
+    } else if(x>m_points[n-1].x) {
         // extrapolation to the right
-        interpol=(m_b[n-1]*h + m_c[n-1])*h + m_y[n-1];
+        interpol=(m_b[n-1]*h + m_c[n-1])*h + m_points[n-1].y;
     } else {
         // interpolation
-        interpol=((m_a[idx]*h + m_b[idx])*h + m_c[idx])*h + m_y[idx];
+        interpol=((m_a[idx]*h + m_b[idx])*h + m_c[idx])*h + m_points[idx].y;
     }
     return interpol;
 }

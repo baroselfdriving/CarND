@@ -10,7 +10,7 @@ struct Vehicle
   int id;
   CartesianPose position; //!< position in map frame
   CartesianPose velocity; //!< velocity in map frame
-  FrenetPose frenet;
+  FrenetPoint frenet;
 
   // Information useful for the our car
   double yawAngle;
