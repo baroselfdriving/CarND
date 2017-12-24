@@ -33,7 +33,7 @@ public:
     double dv;
     double da;
     double dj;
-    double t;
+    double time;
     CartesianPose pose;
   };
 
@@ -50,7 +50,7 @@ public:
   static double getFrenetDFromLaneNumber(int lane);
 
   /// Find nearest vehicle ahead of me in the specified lane. If no vehicle, then return vehicles.end()
-  static VehicleList::const_iterator findLeadVehicle(int lane, const Vehicle& me, const VehicleList& vehicles);
+  static VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles);
 
   /// Call every cycle to generate a list of waypoints for the car to follow
   CartesianPoseList getPlan(const Vehicle& me, const VehicleList& others,

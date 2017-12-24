@@ -114,6 +114,12 @@ FrenetPoint getFrenet(const CartesianPose& p, const WaypointList& wps)
 CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
+  const double maxS = wps.back().frenet.s;
+  while(s > maxS)
+  {
+    s -= maxS;
+  }
+
   WaypointList::const_iterator prev_wp = wps.begin();
   while(s > (prev_wp+1)->frenet.s && (prev_wp != wps.end()-1) )
   {
@@ -141,4 +147,34 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
   p.heading = heading;
 
   return p;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void transformToLocal(CartesianPose& point, const CartesianPose& originFrame)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  const double cosa = cos(originFrame.heading);
+  const double sina = sin(originFrame.heading);
+
+  double x = cosa * (point.x - originFrame.x) + sina * (point.y - originFrame.y);
+  double y = -sina * (point.x - originFrame.x) + cosa * (point.y - originFrame.y);
+  point.x = x;
+  point.y = y;
+  point.heading = point.heading - originFrame.heading;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void transformToGlobal(CartesianPose& point, const CartesianPose& originFrame)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  const double cosa = cos(originFrame.heading);
+  const double sina = sin(originFrame.heading);
+
+  // transform to global frame
+  double x = originFrame.x + cosa * point.x - sina * point.y;
+  double y = originFrame.y + sina * point.x + cosa * point.y;
+  point.x = x;
+  point.y = y;
+  point.heading = point.heading + originFrame.heading;
+
 }

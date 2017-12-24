@@ -18,9 +18,11 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 include_directories(src/Eigen-3.3)
 set(sources
   README.md
+  src/todo.md
   data/highway_map.csv
   src/p11_helper.h
   src/p11_helper.cpp
+  src/spline.h
   src/trajectory_planner.h
   src/trajectory_planner.cpp
   src/behaviour.h

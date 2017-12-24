@@ -17,6 +17,12 @@ inline double distance(double x1, double y1, double x2, double y2) { return sqrt
 
 inline double distance(const CartesianPose& p1, const CartesianPose& p2) { return distance(p1.x, p1.y, p2.x, p2.y); }
 
+/// Transform 'point' in global frame to coordinates of 'originFrame'
+void transformToLocal(CartesianPose& point, const CartesianPose& originFrame);
+
+/// Transform 'point' in 'originFrame' to coorinates of global frame
+void transformToGlobal(CartesianPose& point, const CartesianPose& originFrame);
+
 /// Checks if the SocketIO event has JSON data.
 /// If there is data the JSON object in string format will be returned,
 /// else the empty string "" will be returned.

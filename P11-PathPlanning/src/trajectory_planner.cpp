@@ -1,6 +1,7 @@
 #include "trajectory_planner.h"
 #include "p11_helper.h"
 #include "integrator.h"
+#include "spline.h"
 
 #include <limits>
 #include <Eigen/Core>
@@ -29,7 +30,7 @@ double TrajectoryPlanner::getFrenetDFromLaneNumber(int lane)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const Vehicle& me, const VehicleList& vehicles)
+VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles)
 //---------------------------------------------------------------------------------------------------------------------
 {
   // Lead vehicle is the nearest one ahead of me in the specified lane
@@ -46,15 +47,15 @@ VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const V
 
     // To find if the other vehicle is behind, compute X coordinate of the other vehicle in the
     // car frame and check if the X value is negative
-    const double ca = cos(me.yawAngle);
-    const double sa = sin(me.yawAngle);
-    const double x = ca * (other->position.x - me.position.x) + sa * (other->position.y - me.position.y);
+    const double ca = cos(me.heading);
+    const double sa = sin(me.heading);
+    const double x = ca * (other->position.x - me.x) + sa * (other->position.y - me.y);
     if( x < 0 )
     {
       continue;
     }
 
-    double dist = distance(me.position, other->position);
+    double dist = distance(me, other->position);
     if( dist < nearestDist )
     {
       nearestDist = dist;
@@ -115,17 +116,17 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
   PolynomialConstraint sInitial;
   const auto& firstPointIt = history_.back();
   double s0 = firstPointIt.s;
-  double t0 = firstPointIt.t;
+  double t0 = firstPointIt.time;
   sInitial.q = firstPointIt.sv;
   sInitial.qDot = firstPointIt.sa;
   sInitial.qDotDot = firstPointIt.sj;
-  sInitial.t = firstPointIt.t;
+  sInitial.t = firstPointIt.time;
 
   PolynomialConstraint dInitial;
   dInitial.q = firstPointIt.d;
   dInitial.qDot = firstPointIt.dv;
   dInitial.qDotDot = firstPointIt.da;
-  dInitial.t = firstPointIt.t;
+  dInitial.t = firstPointIt.time;
 
   // set final conditions
   PolynomialConstraint sFinal;
@@ -145,7 +146,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
   const std::array<double, 6> dCoeffs = computePolynomialCoefficients(dInitial, dFinal);
 
   // Generate intermediate waypoints
-  double dt = 0;
+  double dt = SIM_DELTA_TIME;
   for(size_t i = 0; i < nPointsToAdd; ++i)
   {
     const double dt2 = dt*dt;
@@ -163,7 +164,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
     fs.da = 2*dCoeffs[2] + 6*dCoeffs[3]*dt + 12*dCoeffs[4]*dt2 + 20*dCoeffs[5]*dt3;
     fs.dj = 6*dCoeffs[3] + 24*dCoeffs[4]*dt + 60*dCoeffs[5]*dt2;
 
-    fs.t = t0 + dt;
+    fs.time = t0 + dt;
     dt += SIM_DELTA_TIME;
 
     if(i == 0)
@@ -176,6 +177,12 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
       fs.s = integrator.integrate(fs.sv);
     }
 
+    const double maxS = trackWaypoints_.back().frenet.s;
+    if(fs.s > maxS)
+    {
+      fs.s -= maxS;
+      integrator.reset(fs.s, fs.sv);
+    }
     fs.pose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
     history_.push_back(fs);
@@ -199,39 +206,52 @@ void TrajectoryPlanner::smoothenTrajectory(StateList& history, CartesianPoseList
 
   StateList::iterator originIt = history.end() - nPointsToAdd;
   const CartesianPose segmentOrigin = originIt->pose;
-  const double cosa = cos(segmentOrigin.heading);
-  const double sina = sin(segmentOrigin.heading);
+/*
+  // Generate a locally smooth path along the waypoints
+  CartesianPoseList splinePoints(4);
+  const double splineSpacing = 30;
+  for(size_t i = 0; i < splinePoints.size(); ++i)
+  {
+    splinePoints[i] = getCartesianFromFrenet(originIt->s+splineSpacing*i, originIt->d, trackWaypoints_);
+    transformToLocal(splinePoints[i], segmentOrigin);
+  }
 
-  CartesianPoseList segment;
-  for(StateList::iterator it = originIt; it < history.end(); ++it)
+  tk::spline splinator;
+  splinator.set_points(splinePoints);
+
+  // Grab unsmoothed trajectory in segment frame
+  CartesianPoseList unsmooth;
+  for(StateList::iterator it = originIt; it != history.end(); ++it)
   {
     // transform to segment frame and set
     CartesianPose p;
-    p.x = cosa * (it->pose.x - segmentOrigin.x) + sina * (it->pose.y - segmentOrigin.y);
-    p.y = -sina * (it->pose.x - segmentOrigin.x) + cosa * (it->pose.y - segmentOrigin.y);
-    p.heading = it->pose.heading - segmentOrigin.heading;
-
-    segment.push_back(p);
+    p.x = it->pose.x;
+    p.y = it->pose.y;
+    p.heading = it->pose.heading;
+    transformToLocal(p, segmentOrigin);
+    unsmooth.push_back(p);
   }
-
-  CartesianPoseList::iterator segmentIt = segment.begin();
-  for(StateList::iterator it = originIt; it < history.end(); ++it)
+*/
+  // Get smoothed trajectory and set
+  //CartesianPoseList::iterator unsmoothIt = unsmooth.begin();
+  for(StateList::iterator it = originIt; it != history.end(); ++it)
   {
     // Get smoothed coordinate
     CartesianPose p;
-    p.x = segmentIt->x;
-    p.y = segmentIt->y;
+    //p.x = unsmoothIt->x;
+    //p.y = splinator(p.x);
 
-    // transform to global frame
-    it->pose.x = segmentOrigin.x + cosa * p.x - sina * p.y;
-    it->pose.y = segmentOrigin.y + sina * p.x + cosa * p.y;
-    it->pose.heading = segmentIt->heading + segmentOrigin.heading;
-    segmentIt++;
+    //transformToGlobal(p, segmentOrigin);
 
-    coords.push_back(it->pose);
+    //it->pose.x = p.x;
+    //it->pose.y = p.y;
+    //it->pose.heading = p.heading;
+    //unsmoothIt++;
+    coords.push_back(it->pose); /// \todo make sure this has size = 50
+    //std::cout << it->t << ", " << it->s << ", " << it->sv << ", " << it->pose.x << ", " << it->pose.y << " "
+    //          << history.size() << " " << coords.size() << std::endl;
+
   }
-  std::cout << nPointsToAdd << " " << history_.begin()->t << " " << history_.begin()->s << " " << (history_.end()-1)->t << " " << (history_.end()-1)->s << std::endl;
-
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -258,16 +278,17 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     initial.dv = 0;
     initial.da = 0;
     initial.dj = 0;
-    initial.t = 0;
+    initial.time = 0;
     initial.pose.x = me.position.x - cos(me.yawAngle);
     initial.pose.y = me.position.y - sin(me.yawAngle);
     initial.pose.heading = me.yawAngle;
 
+    path.push_back(initial.pose);
     history_.push_back(initial);
     nPointsToAdd -= 1;
 
     // set the second point to car coords
-    initial.s = me.frenet.s + 1;
+    initial.s = me.frenet.s;
     initial.sv = me.speed;
     initial.sa = 0;
     initial.sj = 0;
@@ -275,11 +296,12 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     initial.dv = 0;
     initial.da = 0;
     initial.dj = 0;
-    initial.t = 0;
+    initial.time = 0;
     initial.pose.x = me.position.x;
     initial.pose.y = me.position.y;
     initial.pose.heading = me.yawAngle;
 
+    path.push_back(initial.pose);
     history_.push_back(initial);
     nPointsToAdd -= 1;
   }
@@ -289,25 +311,30 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     history_.erase(history_.begin(), history_.begin() + nPointsToAdd);
   }
 
-  // find nearest vehicle and set final boundary conditions
-  int targetLane = 1;                                             /// \todo replace with correct lane number
+  const auto& pathEnd = history_.back();
+
+  // default targets for the trajectory generator
+  int targetLane = 1; /// \todo replace with correct lane number
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
-  double targetTime = 10;//2*targetDist/targetSpeed;
-/*
-  auto vehicleIt = findLeadVehicle(targetLane, me, others, wps);  ///\todo use 'me'??
+  double targetTime = 2*targetDist/targetSpeed;
+
+  // if behind and close to another vehicle, set safe final boundary conditions
+  auto vehicleIt = findLeadVehicle(targetLane, pathEnd.pose, others);
   if( vehicleIt != others.end() )
   {
-    targetDist = std::min(targetDist, distance(vehicleIt->position, me.position) - SAFE_FOLLOW_DISTANCE); ///\todo use 'me'?
+    const double deltaDist = distance(vehicleIt->position, pathEnd.pose);
+    targetDist = std::min(targetDist, deltaDist - SAFE_FOLLOW_DISTANCE);
     if(targetDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      targetSpeed = vehicleIt->speed; // match speed of vehicle in front
-      targetTime = fabs(targetSpeed - me.speed)/MAX_ACCELERATION;
+      // linearly derate speed to match vehicle in front
+      const double deltaSpeed = targetSpeed - vehicleIt->speed;
+      targetSpeed = vehicleIt->speed + (deltaSpeed * deltaDist)/SAFE_MANOEUVRE_DISTANCE;
     }
-    std::cout << targetDist << " " << vehicleIt->speed << " " << targetSpeed << " " << targetTime << std::endl;
+    std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }
-*/
+
   // Generate waypoints in frenet coordinates
   updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd);
 
