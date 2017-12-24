@@ -290,10 +290,19 @@ void spline::set_points(const CartesianPoseList& points, bool cubic_spline)
     m_points = points;
 
     int   n=points.size();
+    /*
     // TODO: maybe sort x and y, rather than returning an error
-    for(size_t i=0; i<n-1; i++) {
-      /// \todo: uncomment this
-        //assert(m_points[i].x < m_points[i+1].x);
+    for(size_t i=0; i<n-1; i++)
+    {
+      assert(m_points[i].x < m_points[i+1].x);
+    }*/
+
+    for(CartesianPoseList::iterator it = m_points.begin(); it != m_points.end()-1; ++it)
+    {
+      if(it->x > (it+1)->x)
+      {
+        m_points.erase(it);
+      }
     }
 
     if(cubic_spline==true) { // cubic spline interpolation

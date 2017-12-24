@@ -75,7 +75,7 @@ public:
 
 
   /// Given frenet trajectory, update cartesian trajectory
-  void smoothenTrajectory(size_t index, StateList& history, CartesianPoseList& coords);
+  void smoothenTrajectory(StateList& history, CartesianPoseList& coords);
 
 private:
   const WaypointList& trackWaypoints_;

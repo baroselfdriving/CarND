@@ -19,7 +19,6 @@ include_directories(src/Eigen-3.3)
 set(sources
   README.md
   data/highway_map.csv
-  src/spline.h
   src/p11_helper.h
   src/p11_helper.cpp
   src/trajectory_planner.h
