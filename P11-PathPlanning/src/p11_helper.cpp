@@ -2,6 +2,9 @@
 
 #include <limits>
 
+namespace sdcnd_t3p1
+{
+
 //---------------------------------------------------------------------------------------------------------------------
 std::string hasJsonData(std::string s)
 //---------------------------------------------------------------------------------------------------------------------
@@ -176,5 +179,7 @@ void transformToGlobal(CartesianPose& point, const CartesianPose& originFrame)
   point.x = x;
   point.y = y;
   point.heading = point.heading + originFrame.heading;
+
+}
 
 }

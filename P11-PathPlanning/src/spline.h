@@ -108,7 +108,7 @@ public:
     void set_boundary(bd_type left, double left_value,
                       bd_type right, double right_value,
                       bool force_linear_extrapolation=false);
-    void set_points(const CartesianPoseList& points, bool cubic_spline=true);
+    void set_points(const sdcnd_t3p1::CartesianPoseList& points, bool cubic_spline=true);
     double operator() (double x) const;
 };
 
@@ -280,7 +280,7 @@ void spline::set_boundary(spline::bd_type left, double left_value,
 }
 
 
-void spline::set_points(const CartesianPoseList& points, bool cubic_spline)
+void spline::set_points(const sdcnd_t3p1::CartesianPoseList& points, bool cubic_spline)
 {
     assert(points.size()>2);
     std::vector<double> x(points.size());

@@ -1,6 +1,9 @@
 #ifndef INTEGRATOR_H
 #define INTEGRATOR_H
 
+namespace sdcnd_t3p1
+{
+
 /// A simple trapezoidal integrator, good enough for this project
 class Integrator
 {
@@ -24,4 +27,5 @@ private:
   double prevXd_;
 };
 
+}
 #endif // INTEGRATOR_H

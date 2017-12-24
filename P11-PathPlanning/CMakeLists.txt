@@ -20,6 +20,7 @@ set(sources
   README.md
   src/todo.md
   data/highway_map.csv
+  src/constants.h
   src/p11_helper.h
   src/p11_helper.cpp
   src/spline.h

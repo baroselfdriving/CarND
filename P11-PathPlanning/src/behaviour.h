@@ -1,6 +1,9 @@
 #ifndef BEHAVIOUR_H
 #define BEHAVIOUR_H
 
+namespace sdcnd_t3p1
+{
+
 enum BehaviourType
 {
   LANE_FOLLOW,
@@ -11,8 +14,9 @@ enum BehaviourType
 struct Behaviour
 {
   BehaviourType type;
-  double timeHorizon;
+  double cost;
 };
 
+}
 #endif // BEHAVIOUR_H
 

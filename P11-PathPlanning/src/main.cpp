@@ -26,13 +26,13 @@ int main()
     std::cerr << "Unable to open waypoints file" << std::endl;
     return -1;
   }
-  WaypointList trackWaypoints;
-  CartesianPose prevPt = {0};
+  sdcnd_t3p1::WaypointList trackWaypoints;
+  sdcnd_t3p1::CartesianPose prevPt = {0};
   std::string line;
   while (std::getline(fs, line))
   {
     std::istringstream iss(line);
-    Waypoint wp;
+    sdcnd_t3p1::Waypoint wp;
     iss >> wp.point.x;
     iss >> wp.point.y;
     wp.point.heading = atan2((wp.point.y - prevPt.y),(wp.point.x - prevPt.x));
@@ -50,7 +50,7 @@ int main()
     return -1;
   }
 
-  TrajectoryPlanner trajPlanner(trackWaypoints);
+  sdcnd_t3p1::TrajectoryPlanner trajPlanner(trackWaypoints);
 
   uWS::Hub h;
   h.onMessage([&trackWaypoints, &trajPlanner](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
@@ -64,7 +64,7 @@ int main()
     //cout << sdata << endl;
     if (length && length > 2 && pData[0] == '4' && pData[1] == '2')
     {
-      std::string s = hasJsonData(pData);
+      std::string s = sdcnd_t3p1::hasJsonData(pData);
 
       if (s != "")
       {
@@ -76,7 +76,7 @@ int main()
           // j[1] is the data JSON object
 
           // Main car's localization Data
-          Vehicle car;
+          sdcnd_t3p1::Vehicle car;
           car.id = -1;
           car.position.x = j[1]["x"];
           car.position.y = j[1]["y"];
@@ -84,8 +84,8 @@ int main()
           car.velocity.y = 0; // don't know
           car.frenet.s = j[1]["s"];
           car.frenet.d = j[1]["d"];
-          car.yawAngle = deg2rad(j[1]["yaw"]);
-          car.speed = milesPerHr2metersPerSec( j[1]["speed"] );
+          car.yawAngle = sdcnd_t3p1::deg2rad(j[1]["yaw"]);
+          car.speed = sdcnd_t3p1::milesPerHr2metersPerSec( j[1]["speed"] );
 
           /// \note: The simulated car doesn't cover all the points passed to the sim in the last iteration. The
           /// path returned here is the waypoints left over from the last time
@@ -95,7 +95,7 @@ int main()
           auto previousPathY = j[1]["previous_path_y"];
 
           // Previous path's end s and d values
-          FrenetPoint prevPathEnd;
+          sdcnd_t3p1::FrenetPoint prevPathEnd;
           prevPathEnd.s = j[1]["end_path_s"];
           prevPathEnd.d = j[1]["end_path_d"];
           size_t previousPathSz = previousPathX.size();
@@ -105,10 +105,10 @@ int main()
             return -1;
           }
 
-          CartesianPoseList previousPath;
+          sdcnd_t3p1::CartesianPoseList previousPath;
           for(unsigned int i = 0; i < previousPathSz; ++i)
           {
-            CartesianPose p;
+            sdcnd_t3p1::CartesianPose p;
             p.x = previousPathX[i];
             p.y = previousPathY[i];
             previousPath.push_back(p);
@@ -116,10 +116,10 @@ int main()
 
           // Sensor Fusion Data, a list of all other cars on the same side of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
-          VehicleList otherVehicles;
+          sdcnd_t3p1::VehicleList otherVehicles;
           for(const auto& item : sensor_fusion)
           {
-            Vehicle vehicle;
+            sdcnd_t3p1::Vehicle vehicle;
             vehicle.id = item[0];
             vehicle.position.x = item[1];
             vehicle.position.y = item[2];
@@ -128,22 +128,21 @@ int main()
             vehicle.frenet.s = item[5];
             vehicle.frenet.d = item[6];
             vehicle.yawAngle = 0; // don't know, don't care
-            vehicle.speed = distance(0,0,vehicle.velocity.x, vehicle.velocity.y);
+            vehicle.speed = sdcnd_t3p1::distance(0,0,vehicle.velocity.x, vehicle.velocity.y);
             otherVehicles.push_back(vehicle);
           }
 
-          // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
           std::vector<double> next_x_vals;
           std::vector<double> next_y_vals;
 
-          /// ------------ STUFF --------------------
-          CartesianPoseList path = trajPlanner.getPlan(car, otherVehicles, previousPath, prevPathEnd);
+          /// ------------ PROJECT IMPLEMENTATION --------------------
+          sdcnd_t3p1::CartesianPoseList path = trajPlanner.getPlan(car, otherVehicles, previousPath, prevPathEnd);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );
             next_y_vals.push_back( item.y );
           }
-          /// ------------ END STUFF --------------------
+          /// ------------ END PROJECT IMPLEMENTATION --------------------
 
 /*
           /// ------------ TEST --------------------

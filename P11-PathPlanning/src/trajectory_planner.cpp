@@ -8,25 +8,14 @@
 #include <Eigen/Dense>
 #include <iostream>
 
+namespace sdcnd_t3p1
+{
+
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
   : trackWaypoints_(wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-int TrajectoryPlanner::getLaneNumberFromFrenetD(double d)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  return static_cast<int>(std::floor(d/LANE_WIDTH));
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-double TrajectoryPlanner::getFrenetDFromLaneNumber(int lane)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  return lane * LANE_WIDTH + LANE_WIDTH/2.;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -317,7 +306,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   int targetLane = 1; /// \todo replace with correct lane number
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
-  double targetSpeed = MAX_SPEED;
+  double targetSpeed = SPEED_LIMIT;
   double targetTime = 2*targetDist/targetSpeed;
 
   // if behind and close to another vehicle, set safe final boundary conditions
@@ -342,5 +331,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   smoothenTrajectory(history_, path);
 
   return path;
+}
+
 }
 

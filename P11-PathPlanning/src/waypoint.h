@@ -3,6 +3,9 @@
 
 #include <vector>
 
+namespace sdcnd_t3p1
+{
+
 /// 2-D cartesian coordinate
 struct CartesianPose
 {
@@ -30,5 +33,7 @@ struct Waypoint
 };
 
 using WaypointList = std::vector<Waypoint>;
+
+}
 
 #endif // WAYPOINT_H

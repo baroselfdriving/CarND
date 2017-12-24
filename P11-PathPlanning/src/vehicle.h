@@ -4,6 +4,9 @@
 #include "waypoint.h"
 #include <vector>
 
+namespace sdcnd_t3p1
+{
+
 struct Vehicle
 {
   // Information common to all simulated vehicles
@@ -18,5 +21,7 @@ struct Vehicle
 };
 
 using VehicleList = std::vector<Vehicle>;
+
+}
 
 #endif // VEHICLE_H

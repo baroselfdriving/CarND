@@ -4,6 +4,9 @@
 #include "vehicle.h"
 #include "behaviour.h"
 
+namespace sdcnd_t3p1
+{
+
 class BehaviourPlanner
 {
 public:
@@ -11,7 +14,11 @@ public:
   ~BehaviourPlanner() = default;
 
   Behaviour compute(const VehicleList& otherVehicles, const Vehicle& me);
+
+private:
+
 };
 
+}
 #endif // BEHAVIOUR_PLANNER_H
 
