@@ -2,6 +2,7 @@
 #include "spline.h"
 
 #include <limits>
+#include <iostream>
 
 namespace sdcnd_t3p1
 {
@@ -188,7 +189,65 @@ CartesianPose transformToGlobal(const CartesianPose& point, const CartesianPose&
 WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
 //---------------------------------------------------------------------------------------------------------------------
 {
+  if(n < 1)
+  {
+    return input;
+  }
   WaypointList finePoints;
+
+  /// procedure
+  /// - (*) read next waypoint P0
+  /// - Get next two waypoints and convert them into F0 coordinates called P1 and P2
+  /// - Add P0, P1 and P2 to the spline
+  /// - Generate n points P01...P0n between P0 and P1
+  /// - Convert these points to world coordinates. Also compute s,d,dx,dy
+  /// - add P0....P1 to list
+  /// - goto * (do this until the second last point. At this point, we will have completed the loop)
+
+  size_t numInputs = input.size();
+  for(size_t iOriginWp = 0; iOriginWp < numInputs-1; ++iOriginWp)
+  {
+    const CartesianPose segmentOrigin = input[iOriginWp].point;
+    const unsigned int nSplineAnchors = 3;
+    CartesianPoseList splinePoints(nSplineAnchors);
+    for(size_t iNextWp = 0; iNextWp < nSplineAnchors; ++iNextWp)
+    {
+      splinePoints[iNextWp] = transformToLocal(input[(iOriginWp+iNextWp)%numInputs].point, segmentOrigin);
+    }
+    tk::spline splinator;
+    splinator.set_points(splinePoints);
+    const double dx = (splinePoints[1].x - splinePoints[0].x)/n;
+    for(unsigned int i = 1; i <= n; ++i)
+    {
+      if(iOriginWp == 0 && i == 1)
+      {
+        finePoints.push_back(input[0]);
+      }
+      else
+      {
+        WaypointList::const_iterator prevWpIt = finePoints.end()-1;
+        Waypoint wp;
+        wp.point.x = dx*i;
+        wp.point.y = splinator(wp.point.x);
+        wp.point.heading = 0;
+        wp.point = transformToGlobal(wp.point, segmentOrigin);
+        wp.point.heading = atan2((wp.point.y - prevWpIt->point.y),(wp.point.x - prevWpIt->point.x)); /// todo
+        wp.frenet.s = prevWpIt->frenet.s + distance(prevWpIt->point, wp.point);
+        wp.frenet.d = 0;
+        wp.frenet.dx = cos(wp.point.heading-M_PI/2.);
+        wp.frenet.dy = sin(wp.point.heading-M_PI/2.);
+        finePoints.push_back(wp);
+      }
+    }
+  }
+
+  /*
+  for(const auto& wp : finePoints)
+  {
+    std::cout << wp.point.x << ", " << wp.point.y << ", " << wp.frenet.s << ", "
+              << wp.frenet.dx << ", " << wp.frenet.dy << std::endl;
+  }
+  */
   return finePoints;
 }
 

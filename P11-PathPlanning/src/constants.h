@@ -5,7 +5,7 @@ namespace sdcnd_t3p1
 {
 
 static constexpr double LANE_WIDTH = 4;
-static constexpr double SPEED_LIMIT = 20; //!< 50 miles/hr = 22.35 meters/sec
+static constexpr double SPEED_LIMIT = 22.35; //!< 50 miles/hr = 22.35 meters/sec
 
 static constexpr double SIM_DELTA_TIME = 0.02; //!< sim time between each waypoint
 static constexpr unsigned int SIM_NUM_WAYPOINTS =

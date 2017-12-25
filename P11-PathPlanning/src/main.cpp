@@ -27,7 +27,6 @@ int main()
     return -1;
   }
   sdcnd_t3p1::WaypointList trackWaypoints;
-  sdcnd_t3p1::CartesianPose prevPt = {0};
   std::string line;
   while (std::getline(fs, line))
   {
@@ -35,11 +34,10 @@ int main()
     sdcnd_t3p1::Waypoint wp;
     iss >> wp.point.x;
     iss >> wp.point.y;
-    wp.point.heading = atan2((wp.point.y - prevPt.y),(wp.point.x - prevPt.x));
-    prevPt = wp.point;
     iss >> wp.frenet.s;
     iss >> wp.frenet.dx;
     iss >> wp.frenet.dy;
+    wp.point.heading = atan2(wp.frenet.dy, wp.frenet.dx)+M_PI/2.;
     trackWaypoints.push_back(wp);
   }
   fs.close();
@@ -151,11 +149,11 @@ int main()
           double dist_inc = 0.5;
           for(int i = 0; i < 50; i++)
           {
-            FrenetCoord nextFrenetPoint;
-            nextFrenetPoint.s = car.frenet.s + (i+1) * dist_inc;
-            nextFrenetPoint.d = 6;
+            sdcnd_t3p1::FrenetPoint nextF;
+            nextF.s = car.frenet.s + (i+1) * dist_inc;
+            nextF.d = 6;
 
-            CartesianCoord xy = getXY(nextFrenetPoint, trackWaypoints);
+            sdcnd_t3p1::CartesianPose xy = sdcnd_t3p1::getCartesianFromFrenet(nextF.s, nextF.d, fineWaypoints);
 
             next_x_vals.push_back(xy.x);
             next_y_vals.push_back(xy.y);

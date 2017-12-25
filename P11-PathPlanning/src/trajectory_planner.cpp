@@ -158,13 +158,9 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 
     if(i == 0)
     {
-      fs.s = s0;
-      integrator.reset(fs.s, fs.sv);
+      integrator.reset(s0, sInitial.q);
     }
-    else
-    {
-      fs.s = integrator.integrate(fs.sv);
-    }
+    fs.s = integrator.integrate(fs.sv);
 
     const double maxS = trackWaypoints_.back().frenet.s;
     if(fs.s > maxS)
@@ -182,64 +178,12 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 void TrajectoryPlanner::smoothenTrajectory(StateList& history, CartesianPoseList& coords)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  const size_t nPointsToAdd = SIM_NUM_WAYPOINTS - coords.size();
-
   assert(history.size() == 50);
-
-  // smoothen the cartesian coordinates
-
-  /// - Find frame at the origin of the segment
-  /// - transform all points to coordinates of segment frame
-  /// - fit spline. get cartesian coordinates in segment frame
-  /// - transform cartesian coords into global frame
-
+  const size_t nPointsToAdd = SIM_NUM_WAYPOINTS - coords.size();
   StateList::iterator originIt = history.end() - nPointsToAdd;
-  const CartesianPose segmentOrigin = originIt->pose;
-/*
-  // Generate a locally smooth path along the waypoints
-  CartesianPoseList splinePoints(4);
-  const double splineSpacing = 30;
-  for(size_t i = 0; i < splinePoints.size(); ++i)
-  {
-    splinePoints[i] = getCartesianFromFrenet(originIt->s+splineSpacing*i, originIt->d, trackWaypoints_);
-    transformToLocal(splinePoints[i], segmentOrigin);
-  }
-
-  tk::spline splinator;
-  splinator.set_points(splinePoints);
-
-  // Grab unsmoothed trajectory in segment frame
-  CartesianPoseList unsmooth;
   for(StateList::iterator it = originIt; it != history.end(); ++it)
   {
-    // transform to segment frame and set
-    CartesianPose p;
-    p.x = it->pose.x;
-    p.y = it->pose.y;
-    p.heading = it->pose.heading;
-    transformToLocal(p, segmentOrigin);
-    unsmooth.push_back(p);
-  }
-*/
-  // Get smoothed trajectory and set
-  //CartesianPoseList::iterator unsmoothIt = unsmooth.begin();
-  for(StateList::iterator it = originIt; it != history.end(); ++it)
-  {
-    // Get smoothed coordinate
-    CartesianPose p;
-    //p.x = unsmoothIt->x;
-    //p.y = splinator(p.x);
-
-    //transformToGlobal(p, segmentOrigin);
-
-    //it->pose.x = p.x;
-    //it->pose.y = p.y;
-    //it->pose.heading = p.heading;
-    //unsmoothIt++;
     coords.push_back(it->pose); /// \todo make sure this has size = 50
-    //std::cout << it->t << ", " << it->s << ", " << it->sv << ", " << it->pose.x << ", " << it->pose.y << " "
-    //          << history.size() << " " << coords.size() << std::endl;
-
   }
 }
 
@@ -306,14 +250,14 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   int targetLane = 1; /// \todo replace with correct lane number
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
   double targetDist = SAFE_MANOEUVRE_DISTANCE;
-  double targetSpeed = SPEED_LIMIT;
+  double targetSpeed = MAX_SPEED;
   double targetTime = 2*targetDist/targetSpeed;
 
   // if behind and close to another vehicle, set safe final boundary conditions
-  auto vehicleIt = findLeadVehicle(targetLane, pathEnd.pose, others);
+  auto vehicleIt = findLeadVehicle(targetLane, me.position, others);
   if( vehicleIt != others.end() )
   {
-    const double deltaDist = distance(vehicleIt->position, pathEnd.pose);
+    const double deltaDist = distance(vehicleIt->position, me.position);
     targetDist = std::min(targetDist, deltaDist - SAFE_FOLLOW_DISTANCE);
     if(targetDist < SAFE_MANOEUVRE_DISTANCE)
     {
