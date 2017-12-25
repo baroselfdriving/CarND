@@ -21,8 +21,8 @@ set(sources
   src/todo.md
   data/highway_map.csv
   src/constants.h
-  src/p11_helper.h
-  src/p11_helper.cpp
+  src/helpers.h
+  src/helpers.cpp
   src/spline.h
   src/cSpline.h
   src/cSpline.cpp
@@ -32,7 +32,6 @@ set(sources
   src/behaviour_planner.h
   src/behaviour_planner.cpp
   src/waypoint.h
-  src/waypoint.cpp
   src/vehicle.h
   src/integrator.h
   src/vehicle.cpp)

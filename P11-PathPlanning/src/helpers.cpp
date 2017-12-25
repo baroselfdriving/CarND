@@ -1,4 +1,5 @@
-#include "p11_helper.h"
+#include "helpers.h"
+#include "spline.h"
 
 #include <limits>
 
@@ -153,32 +154,40 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void transformToLocal(CartesianPose& point, const CartesianPose& originFrame)
+CartesianPose transformToLocal(const CartesianPose& point, const CartesianPose& originFrame)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const double cosa = cos(originFrame.heading);
   const double sina = sin(originFrame.heading);
 
-  double x = cosa * (point.x - originFrame.x) + sina * (point.y - originFrame.y);
-  double y = -sina * (point.x - originFrame.x) + cosa * (point.y - originFrame.y);
-  point.x = x;
-  point.y = y;
-  point.heading = point.heading - originFrame.heading;
+  CartesianPose out;
+  out.x = cosa * (point.x - originFrame.x) + sina * (point.y - originFrame.y);
+  out.y = -sina * (point.x - originFrame.x) + cosa * (point.y - originFrame.y);
+  out.heading = point.heading - originFrame.heading;
+
+  return out;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void transformToGlobal(CartesianPose& point, const CartesianPose& originFrame)
+CartesianPose transformToGlobal(const CartesianPose& point, const CartesianPose& originFrame)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const double cosa = cos(originFrame.heading);
   const double sina = sin(originFrame.heading);
 
   // transform to global frame
-  double x = originFrame.x + cosa * point.x - sina * point.y;
-  double y = originFrame.y + sina * point.x + cosa * point.y;
-  point.x = x;
-  point.y = y;
-  point.heading = point.heading + originFrame.heading;
+  CartesianPose out;
+  out.x = originFrame.x + cosa * point.x - sina * point.y;
+  out.y = originFrame.y + sina * point.x + cosa * point.y;
+  out.heading = point.heading + originFrame.heading;
+
+  return out;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void generateFinerWaypoints(const WaypointList& input, unsigned int n, WaypointList& output)
+//---------------------------------------------------------------------------------------------------------------------
+{
 
 }
 

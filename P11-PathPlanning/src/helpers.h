@@ -1,5 +1,5 @@
-#ifndef P11_HELPER_H
-#define P11_HELPER_H
+#ifndef HELPERS_H
+#define HELPERS_H
 
 #include "constants.h"
 #include "waypoint.h"
@@ -28,10 +28,10 @@ inline int getLaneNumberFromFrenetD(double d) { return static_cast<int>(std::flo
 inline double getFrenetDFromLaneNumber(int lane) { return lane * LANE_WIDTH + LANE_WIDTH/2.; }
 
 /// Transform 'point' in global frame to coordinates of 'originFrame'
-void transformToLocal(CartesianPose& point, const CartesianPose& originFrame);
+CartesianPose transformToLocal(const CartesianPose& point, const CartesianPose& originFrame);
 
 /// Transform 'point' in 'originFrame' to coorinates of global frame
-void transformToGlobal(CartesianPose& point, const CartesianPose& originFrame);
+CartesianPose transformToGlobal(const CartesianPose& point, const CartesianPose& originFrame);
 
 /// Checks if the SocketIO event has JSON data.
 /// If there is data the JSON object in string format will be returned,
@@ -48,6 +48,9 @@ FrenetPoint getFrenet(const CartesianPose& p, const WaypointList& wps);
 /// Transform from Frenet s,d coordinates to Cartesian x,y
 CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps);
 
+/// Populate with 'n' intermediate points between each pair of input waypoints using cubic spline fit.
+void generateFinerWaypoints(const WaypointList& input, unsigned int n, WaypointList& output);
+
 }
 
-#endif // P11_HELPER_H
+#endif // HELPERS_H
