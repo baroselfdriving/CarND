@@ -38,7 +38,7 @@ public:
     @param[in] y  The y points
 
     */
-    cSpline(const CartesianPoseList& xy);
+    cSpline(const sdcnd_t3p1::CartesianPoseList& xy);
 
     /** Check if input is insane
 

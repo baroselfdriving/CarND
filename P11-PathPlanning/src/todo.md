@@ -1,7 +1,7 @@
 # TODO
 
 - Handle discontinuity at end of path
-- spline fit to waypoints
+- spline fit to waypoints, or find a way to parmeterize spline with respect to arc length, i.e. (x,y) = f(s)
 
 # Behaviours implementation
 

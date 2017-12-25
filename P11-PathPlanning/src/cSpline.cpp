@@ -38,7 +38,7 @@ namespace raven
 
 typedef std::vector< double > vd_t;
 
-cSpline::cSpline(const CartesianPoseList& points)
+cSpline::cSpline(const sdcnd_t3p1::CartesianPoseList& points)
 {
   for(const auto& p : points)
   {
