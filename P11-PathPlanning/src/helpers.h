@@ -49,7 +49,7 @@ FrenetPoint getFrenet(const CartesianPose& p, const WaypointList& wps);
 CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps);
 
 /// Populate with 'n' intermediate points between each pair of input waypoints using cubic spline fit.
-void generateFinerWaypoints(const WaypointList& input, unsigned int n, WaypointList& output);
+WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n);
 
 }
 

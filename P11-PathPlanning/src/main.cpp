@@ -44,16 +44,18 @@ int main()
   }
   fs.close();
 
-  if(trackWaypoints.size() < 1)
+  if(trackWaypoints.size() < 2)
   {
     std::cerr << "No waypoints read" << std::endl;
     return -1;
   }
 
-  sdcnd_t3p1::TrajectoryPlanner trajPlanner(trackWaypoints);
+  // beef up the number of waypoints and make it smooth
+  sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 10);
+  sdcnd_t3p1::TrajectoryPlanner trajPlanner(fineWaypoints);
 
   uWS::Hub h;
-  h.onMessage([&trackWaypoints, &trajPlanner](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
+  h.onMessage([&trajPlanner](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
   {
     (void)opCode;
 

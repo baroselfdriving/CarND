@@ -185,10 +185,11 @@ CartesianPose transformToGlobal(const CartesianPose& point, const CartesianPose&
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void generateFinerWaypoints(const WaypointList& input, unsigned int n, WaypointList& output)
+WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
 //---------------------------------------------------------------------------------------------------------------------
 {
-
+  WaypointList finePoints;
+  return finePoints;
 }
 
 }
