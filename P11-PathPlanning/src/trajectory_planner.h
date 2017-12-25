@@ -16,10 +16,9 @@ namespace sdcnd_t3p1
 class TrajectoryPlanner
 {
 public:
-  static constexpr double MAX_SPEED = .95 * SPEED_LIMIT;
+  static constexpr double MAX_SPEED = .9 * SPEED_LIMIT;
   static constexpr double ACCELERATION_LIMIT = 10;
   static constexpr double JERK_LIMIT = 10;
-  static constexpr double SAFE_FOLLOW_DISTANCE = 10; //!< how close can we get to a vehicle in front
   static constexpr double SAFE_MANOEUVRE_DISTANCE = 30; //!< how much space do we want to consider a maneouvre
 
   struct State

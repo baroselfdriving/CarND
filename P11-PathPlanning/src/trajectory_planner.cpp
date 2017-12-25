@@ -249,25 +249,23 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   // default targets for the trajectory generator
   int targetLane = 1; /// \todo replace with correct lane number
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
-  double targetDist = SAFE_MANOEUVRE_DISTANCE;
   double targetSpeed = MAX_SPEED;
-  double targetTime = 2*targetDist/targetSpeed;
-
+  double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
+/*
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicleIt = findLeadVehicle(targetLane, me.position, others);
   if( vehicleIt != others.end() )
   {
     const double deltaDist = distance(vehicleIt->position, me.position);
-    targetDist = std::min(targetDist, deltaDist - SAFE_FOLLOW_DISTANCE);
-    if(targetDist < SAFE_MANOEUVRE_DISTANCE)
+    if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
       // linearly derate speed to match vehicle in front
-      const double deltaSpeed = targetSpeed - vehicleIt->speed;
-      targetSpeed = vehicleIt->speed + (deltaSpeed * deltaDist)/SAFE_MANOEUVRE_DISTANCE;
+      targetSpeed = vehicleIt->speed;
+      targetTime = deltaDist/targetSpeed;
     }
     std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }
-
+*/
   // Generate waypoints in frenet coordinates
   updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd);
 
