@@ -175,14 +175,15 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
     }
     fs.pose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
+    // get control updated position from vehice model
     const CartesianPose& carPose = model_.getPose();
-    CartesianPose ctv;
-    ctv.y = fs.pose.y - carPose.y;
-    ctv.x = fs.pose.x - carPose.x;
-    double perpendicular = fs.pose.heading-M_PI/2;
-    double cte = ctv.x * cos(perpendicular) + ctv.y * sin(perpendicular);
+    CartesianPose trackingError;
+    trackingError.y = fs.pose.y - carPose.y;
+    trackingError.x = fs.pose.x - carPose.x;
+    double crossTrackDir = fs.pose.heading-M_PI/2;
+    double cte = trackingError.x * cos(crossTrackDir) + trackingError.y * sin(crossTrackDir);
 
-    fs.pose = model_.predict(cte, 0/*he*/, fs.sv);
+    fs.pose = model_.predict(cte, fs.sv);
     history_.push_back(fs);
   }
 }

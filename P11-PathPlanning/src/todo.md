@@ -1,5 +1,7 @@
 # TODO
 
+- Vehicle modeling - make sure it works as expected
+- Do we need speed control when PID goes unstable?
 - PID tuning
 - safe lane following
 - behaviours

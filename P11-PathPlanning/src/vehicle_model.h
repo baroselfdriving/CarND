@@ -20,7 +20,7 @@ public:
   static constexpr double GAIN_KI = 0.0001; //!< integral gain for steering angle controller
 
 public:
-  VehicleModel(double dt) : steeringAngle_(0), dt_(dt), lastCrossTrackErr_(0), lastHeadingErr_(0), sumCte_(0) {}
+  VehicleModel(double dt) : steeringAngle_(0), dt_(dt), lastCrossTrackErr_(0), sumCte_(0) {}
 
   ~VehicleModel() = default;
 
@@ -30,7 +30,6 @@ public:
     pose_ = pose;
     steeringAngle_ = 0;
     lastCrossTrackErr_ = 0;
-    lastHeadingErr_ = 0;
     sumCte_ = 0;
   }
 
@@ -38,9 +37,9 @@ public:
   const CartesianPose& getPose() const { return pose_; }
 
   /// predict motion for next time step
-  CartesianPose predict(double crossTrackError, double headingError, double speed)
+  CartesianPose predict(double crossTrackError, double speed)
   {
-    updateSteeringAngle(crossTrackError, headingError, speed);
+    updateSteeringAngle(crossTrackError, speed);
     return move(speed);
   }
 
@@ -58,11 +57,9 @@ private:
   }
 
   /// Apply PID control and generate a steering angle update, given cross track error
-  void updateSteeringAngle(double cte, double he, double speed)
+  void updateSteeringAngle(double cte, double speed)
   {
     // predicted error. If the control is working, these should eventually go to zero
-    const double cteNext = cte + speed * sin(he) * dt_;
-    const double heNext = he + (speed/Lf) * steeringAngle_ * dt_;
     const double dcte = cte - lastCrossTrackErr_;
 
     steeringAngle_ = -(GAIN_KP * cte) - (GAIN_KD * dcte) - (GAIN_KI * sumCte_);
@@ -73,7 +70,6 @@ private:
     steeringAngle_ = std::min(MAX_STEERING_ANGLE, std::max(steeringAngle_, -MAX_STEERING_ANGLE));
 
     lastCrossTrackErr_ = cte;
-    lastHeadingErr_ = he;
     sumCte_ += cte;
   }
 
@@ -82,7 +78,6 @@ private:
   double steeringAngle_;
   double dt_; //!< control period
   double lastCrossTrackErr_;
-  double lastHeadingErr_;
   double sumCte_;
 };
 
