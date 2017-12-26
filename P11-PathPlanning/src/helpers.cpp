@@ -231,7 +231,7 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
         wp.point.y = splinator(wp.point.x);
         wp.point.heading = 0;
         wp.point = transformToGlobal(wp.point, segmentOrigin);
-        wp.point.heading = atan2((wp.point.y - prevWpIt->point.y),(wp.point.x - prevWpIt->point.x)); /// todo
+        wp.point.heading = atan2((wp.point.y - prevWpIt->point.y),(wp.point.x - prevWpIt->point.x));
         wp.frenet.s = prevWpIt->frenet.s + distance(prevWpIt->point, wp.point);
         wp.frenet.d = 0;
         wp.frenet.dx = cos(wp.point.heading-M_PI/2.);
