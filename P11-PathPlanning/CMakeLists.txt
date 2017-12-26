@@ -24,8 +24,6 @@ set(sources
   src/helpers.h
   src/helpers.cpp
   src/spline.h
-  src/cSpline.h
-  src/cSpline.cpp
   src/trajectory_planner.h
   src/trajectory_planner.cpp
   src/behaviour.h
