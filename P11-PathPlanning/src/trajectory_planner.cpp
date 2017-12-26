@@ -11,6 +11,11 @@
 namespace sdcnd_t3p1
 {
 
+constexpr double TrajectoryPlanner::MAX_SPEED;
+constexpr double TrajectoryPlanner::ACCELERATION_LIMIT;
+constexpr double TrajectoryPlanner::JERK_LIMIT;
+constexpr double TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
+
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
   : trackWaypoints_(wps), model_(SIM_DELTA_TIME)
@@ -220,9 +225,9 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     initial.da = 0;
     initial.dj = 0;
     initial.time = 0;
-    initial.pose.x = me.position.x - cos(me.yawAngle);
-    initial.pose.y = me.position.y - sin(me.yawAngle);
-    initial.pose.heading = me.yawAngle;
+    initial.pose.x = me.position.x - cos(me.position.heading);
+    initial.pose.y = me.position.y - sin(me.position.heading);
+    initial.pose.heading = me.position.heading;
 
     path.push_back(initial.pose);
     history_.push_back(initial);
@@ -240,7 +245,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     initial.time = 0;
     initial.pose.x = me.position.x;
     initial.pose.y = me.position.y;
-    initial.pose.heading = me.yawAngle;
+    initial.pose.heading = me.position.heading;
 
     path.push_back(initial.pose);
     history_.push_back(initial);
@@ -259,7 +264,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
   double targetSpeed = MAX_SPEED;
   double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
-/*
+
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicleIt = findLeadVehicle(targetLane, me.position, others);
   if( vehicleIt != others.end() )
@@ -268,12 +273,12 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
       // linearly derate speed to match vehicle in front
-      targetSpeed = vehicleIt->speed;
+      targetSpeed = std::min(MAX_SPEED, vehicleIt->speed);
       targetTime = deltaDist/targetSpeed;
     }
     std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }
-*/
+
   // Generate waypoints in frenet coordinates
   updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd);
 

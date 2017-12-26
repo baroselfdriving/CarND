@@ -49,8 +49,8 @@ int main()
   }
 
   // beef up the number of waypoints and make it smooth
-  //sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 10);
-  sdcnd_t3p1::TrajectoryPlanner trajPlanner(trackWaypoints);
+  sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 2);
+  sdcnd_t3p1::TrajectoryPlanner trajPlanner(fineWaypoints);
 
   uWS::Hub h;
   bool doReset = false;
@@ -81,11 +81,11 @@ int main()
           car.id = -1;
           car.position.x = j[1]["x"];
           car.position.y = j[1]["y"];
+          car.position.heading = sdcnd_t3p1::deg2rad(j[1]["yaw"]);
           car.velocity.x = 0; // don't know
           car.velocity.y = 0; // don't know
           car.frenet.s = j[1]["s"];
           car.frenet.d = j[1]["d"];
-          car.yawAngle = sdcnd_t3p1::deg2rad(j[1]["yaw"]);
           car.speed = sdcnd_t3p1::milesPerHr2metersPerSec( j[1]["speed"] );
 
           if(doReset)
@@ -129,11 +129,11 @@ int main()
             vehicle.id = item[0];
             vehicle.position.x = item[1];
             vehicle.position.y = item[2];
+            vehicle.position.heading = 0; // don't know, don't care
             vehicle.velocity.x = item[3];
             vehicle.velocity.y = item[4];
             vehicle.frenet.s = item[5];
             vehicle.frenet.d = item[6];
-            vehicle.yawAngle = 0; // don't know, don't care
             vehicle.speed = sdcnd_t3p1::distance(0,0,vehicle.velocity.x, vehicle.velocity.y);
             otherVehicles.push_back(vehicle);
           }
