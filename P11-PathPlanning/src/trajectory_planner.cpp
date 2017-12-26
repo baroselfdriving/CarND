@@ -175,18 +175,21 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
     }
 
     // refernce trajectory coordinates
-    fs.pose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
+    const CartesianPose reference = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
     // compute cross track error between vehicle and reference trajectory
     const CartesianPose& carPose = model_.getPose();
     CartesianPose trackingError;
-    trackingError.y = fs.pose.y - carPose.y;
-    trackingError.x = fs.pose.x - carPose.x;
-    double crossTrackDir = fs.pose.heading-M_PI/2;
+    trackingError.y = reference.y - carPose.y;
+    trackingError.x = reference.x - carPose.x;
+    double crossTrackDir = reference.heading-M_PI/2;
     double cte = trackingError.x * cos(crossTrackDir) + trackingError.y * sin(crossTrackDir);
 
     // push into control and get updated vehicle position
     fs.pose = model_.predict(cte, fs.sv);
+    std::cout << reference.x << " " << fs.pose.x
+              << " " << reference.y << " " << fs.pose.y
+              << " " << reference.heading*180/M_PI << " " << fs.pose.heading*180/M_PI << std::endl;
 
     // push into buffer that's passed to simulator
     history_.push_back(fs);
@@ -282,7 +285,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
       targetSpeed = std::min(MAX_SPEED, vehicleIt->speed);
       targetTime = deltaDist/targetSpeed;
     }
-    std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
+    //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }
 
   // Generate waypoints in frenet coordinates

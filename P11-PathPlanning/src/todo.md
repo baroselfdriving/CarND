@@ -2,7 +2,7 @@
 
 - Vehicle modeling
 - PID tuning
-- Formulate CTE to avoid instability.
+- Formulate CTE to avoid instability - use CTE and on-track error
 - safe lane following
 - behaviours
 
