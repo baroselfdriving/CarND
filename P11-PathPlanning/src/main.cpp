@@ -49,11 +49,12 @@ int main()
   }
 
   // beef up the number of waypoints and make it smooth
-  sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 10);
-  sdcnd_t3p1::TrajectoryPlanner trajPlanner(fineWaypoints);
+  //sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 10);
+  sdcnd_t3p1::TrajectoryPlanner trajPlanner(trackWaypoints);
 
   uWS::Hub h;
-  h.onMessage([&trajPlanner](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
+  bool doReset = false;
+  h.onMessage([&trajPlanner, &doReset](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
   {
     (void)opCode;
 
@@ -87,6 +88,11 @@ int main()
           car.yawAngle = sdcnd_t3p1::deg2rad(j[1]["yaw"]);
           car.speed = sdcnd_t3p1::milesPerHr2metersPerSec( j[1]["speed"] );
 
+          if(doReset)
+          {
+            trajPlanner.reset(car.position);
+            doReset = false;
+          }
           /// \note: The simulated car doesn't cover all the points passed to the sim in the last iteration. The
           /// path returned here is the waypoints left over from the last time
 
@@ -194,10 +200,11 @@ int main()
     }
   });
 
-  h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req)
+  h.onConnection([&h, &doReset](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req)
   {
     (void)ws;
     (void)req;
+    doReset = true;
     std::cout << "Connected!!!" << std::endl;
   });
 

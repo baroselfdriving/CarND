@@ -3,7 +3,7 @@
 
 #include "constants.h"
 #include "waypoint.h"
-#include "vehicle.h"
+#include "vehicle_model.h"
 #include "behaviour.h"
 
 #include <cmath>
@@ -41,6 +41,8 @@ public:
   TrajectoryPlanner(const WaypointList& wps);
   ~TrajectoryPlanner() = default;
 
+  void reset(const CartesianPose& pose) { model_.reset(pose); history_.clear(); }
+
   /// Find nearest vehicle ahead of me in the specified lane. If no vehicle, then return vehicles.end()
   static VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles);
 
@@ -72,6 +74,7 @@ private:
 private:
   const WaypointList& trackWaypoints_;
   StateList history_;
+  VehicleModel model_;
 };
 
 }

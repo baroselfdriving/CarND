@@ -13,7 +13,7 @@ namespace sdcnd_t3p1
 
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
-  : trackWaypoints_(wps)
+  : trackWaypoints_(wps), model_(SIM_DELTA_TIME)
 //---------------------------------------------------------------------------------------------------------------------
 {
 }
@@ -170,6 +170,14 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
     }
     fs.pose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
+    const CartesianPose& carPose = model_.getPose();
+    CartesianPose ctv;
+    ctv.y = fs.pose.y - carPose.y;
+    ctv.x = fs.pose.x - carPose.x;
+    double perpendicular = fs.pose.heading-M_PI/2;
+    double cte = ctv.x * cos(perpendicular) + ctv.y * sin(perpendicular);
+
+    fs.pose = model_.predict(cte, 0/*he*/, fs.sv);
     history_.push_back(fs);
   }
 }
