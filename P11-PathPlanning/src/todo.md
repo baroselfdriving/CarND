@@ -1,8 +1,8 @@
 # TODO
 
-- Vehicle modeling - make sure it works as expected
-- Do we need speed control when PID goes unstable?
+- Vehicle modeling
 - PID tuning
+- Formulate CTE to avoid instability.
 - safe lane following
 - behaviours
 

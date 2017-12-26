@@ -173,9 +173,11 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
       fs.s -= maxS;
       integrator.reset(fs.s, fs.sv);
     }
+
+    // refernce trajectory coordinates
     fs.pose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
-    // get control updated position from vehice model
+    // compute cross track error between vehicle and reference trajectory
     const CartesianPose& carPose = model_.getPose();
     CartesianPose trackingError;
     trackingError.y = fs.pose.y - carPose.y;
@@ -183,7 +185,10 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
     double crossTrackDir = fs.pose.heading-M_PI/2;
     double cte = trackingError.x * cos(crossTrackDir) + trackingError.y * sin(crossTrackDir);
 
+    // push into control and get updated vehicle position
     fs.pose = model_.predict(cte, fs.sv);
+
+    // push into buffer that's passed to simulator
     history_.push_back(fs);
   }
 }

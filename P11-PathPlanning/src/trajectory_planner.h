@@ -23,16 +23,16 @@ public:
 
   struct State
   {
-    double s;
-    double sv;
-    double sa;
-    double sj;
-    double d;
-    double dv;
-    double da;
-    double dj;
-    double time;
-    CartesianPose pose;
+    double s;   //!< on-track distance
+    double sv;  //!< on-track speed
+    double sa;  //!< on-track acceleration
+    double sj;  //!< on-track jerk
+    double d;   //!< x-track distance
+    double dv;  //!< x-track speed
+    double da;  //!< x-track acceleration
+    double dj;  //!< x-track jerk
+    double time;  //!< timestamp
+    CartesianPose pose; //!< world coordinates
   };
 
   using StateList = std::vector<State>;
