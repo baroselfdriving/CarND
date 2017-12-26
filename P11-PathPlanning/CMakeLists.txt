@@ -33,8 +33,8 @@ set(sources
   src/behaviour_planner.cpp
   src/waypoint.h
   src/vehicle.h
-  src/integrator.h
-  src/vehicle.cpp)
+  src/vehicle_model.h
+  src/integrator.h)
 add_executable(path_planning src/main.cpp ${sources})
 target_link_libraries(path_planning z ssl uv uWS)
 
