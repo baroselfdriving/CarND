@@ -49,7 +49,7 @@ int main()
   }
 
   // beef up the number of waypoints and make it smooth
-  sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 2);
+  sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 10);
   sdcnd_t3p1::TrajectoryPlanner trajPlanner(fineWaypoints);
 
   uWS::Hub h;

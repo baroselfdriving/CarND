@@ -2,8 +2,11 @@
 
 - Vehicle modeling
 - PID tuning
-- Formulate CTE to avoid instability - use CTE and on-track error
+- Fix vehicle instability at s-boundary
+- Stay with acceleration, jerk and speed limit
+- consider reducing speed for large heading changes
 - safe lane following
+- deal with vehicle barging in to our path on short notice
 - behaviours
 
 # Behaviours implementation

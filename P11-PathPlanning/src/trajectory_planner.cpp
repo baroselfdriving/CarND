@@ -12,8 +12,6 @@ namespace sdcnd_t3p1
 {
 
 constexpr double TrajectoryPlanner::MAX_SPEED;
-constexpr double TrajectoryPlanner::ACCELERATION_LIMIT;
-constexpr double TrajectoryPlanner::JERK_LIMIT;
 constexpr double TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -174,22 +172,12 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
       integrator.reset(fs.s, fs.sv);
     }
 
-    // refernce trajectory coordinates
-    const CartesianPose reference = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
-
-    // compute cross track error between vehicle and reference trajectory
-    const CartesianPose& carPose = model_.getPose();
-    CartesianPose trackingError;
-    trackingError.y = reference.y - carPose.y;
-    trackingError.x = reference.x - carPose.x;
-    double crossTrackDir = reference.heading-M_PI/2;
-    double cte = trackingError.x * cos(crossTrackDir) + trackingError.y * sin(crossTrackDir);
+    // reference trajectory coordinates
+    std::cout << fs.s << std::endl;
+    const CartesianPose refPose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
     // push into control and get updated vehicle position
-    fs.pose = model_.predict(cte, fs.sv);
-    std::cout << reference.x << " " << fs.pose.x
-              << " " << reference.y << " " << fs.pose.y
-              << " " << reference.heading*180/M_PI << " " << fs.pose.heading*180/M_PI << std::endl;
+    fs.pose = model_.predict(refPose, fs.sv);
 
     // push into buffer that's passed to simulator
     history_.push_back(fs);
@@ -269,8 +257,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   const auto& pathEnd = history_.back();
 
   // default targets for the trajectory generator
-  int targetLane = 1; /// \todo replace with correct lane number
-  double targetD = getFrenetDFromLaneNumber(targetLane) ;
+  static int targetLane = 1; /// \todo replace with correct lane number
   double targetSpeed = MAX_SPEED;
   double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
@@ -282,11 +269,13 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
       // linearly derate speed to match vehicle in front
-      targetSpeed = std::min(MAX_SPEED, vehicleIt->speed);
+      targetSpeed = std::min(MAX_SPEED, vehicleIt->speed)-1;
       targetTime = deltaDist/targetSpeed;
     }
     //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }
+
+  double targetD = getFrenetDFromLaneNumber(targetLane) ;
 
   // Generate waypoints in frenet coordinates
   updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd);
