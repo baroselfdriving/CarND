@@ -187,7 +187,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 
 //---------------------------------------------------------------------------------------------------------------------
 CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
-                                             const CartesianPoseList& myPrevPath, const FrenetPoint& prevPathEnd)
+                                             const CartesianPoseList& myPrevPath)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const size_t myPrevPathSz = myPrevPath.size();
@@ -242,8 +242,6 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     history_.erase(history_.begin(), history_.begin() + nPointsToAdd);
   }
 
-  const auto& pathEnd = history_.back();
-
   // default targets for the trajectory generator
   static int targetLane = 1; /// \todo replace with lane change logic
   double targetSpeed = MAX_SPEED;
@@ -257,7 +255,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
       targetSpeed = std::min(MAX_SPEED, vehicleIt->speed)-1;
-      targetTime = deltaDist/targetSpeed;
+      targetTime = deltaDist/targetSpeed;///\todo deal with divie by zero
     }
     //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }

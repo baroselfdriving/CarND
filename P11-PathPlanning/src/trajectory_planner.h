@@ -46,7 +46,7 @@ public:
 
   /// Call every cycle to generate a list of waypoints for the car to follow
   CartesianPoseList getPlan(const Vehicle& me, const VehicleList& others,
-                            const CartesianPoseList& myPrevPath, const FrenetPoint& prevPathEnd);
+                            const CartesianPoseList& myPrevPath);
 
 private:
   struct PolynomialConstraint

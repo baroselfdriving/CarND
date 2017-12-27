@@ -99,11 +99,10 @@ int main()
           // Previous path data given to the Planner
           auto previousPathX = j[1]["previous_path_x"];
           auto previousPathY = j[1]["previous_path_y"];
-
-          // Previous path's end s and d values
           sdcnd_t3p1::FrenetPoint prevPathEnd;
           prevPathEnd.s = j[1]["end_path_s"];
           prevPathEnd.d = j[1]["end_path_d"];
+
           size_t previousPathSz = previousPathX.size();
           if( previousPathSz != previousPathY.size())
           {
@@ -142,7 +141,7 @@ int main()
           std::vector<double> next_y_vals;
 
           /// ------------ PROJECT IMPLEMENTATION --------------------
-          sdcnd_t3p1::CartesianPoseList path = trajPlanner.getPlan(car, otherVehicles, previousPath, prevPathEnd);
+          sdcnd_t3p1::CartesianPoseList path = trajPlanner.getPlan(car, otherVehicles, previousPath);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );
