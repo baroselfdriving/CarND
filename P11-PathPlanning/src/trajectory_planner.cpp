@@ -186,19 +186,6 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::smoothenTrajectory(StateList& history, CartesianPoseList& coords)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  assert(history.size() == 50);
-  const size_t nPointsToAdd = SIM_NUM_WAYPOINTS - coords.size();
-  StateList::iterator originIt = history.end() - nPointsToAdd;
-  for(StateList::iterator it = originIt; it != history.end(); ++it)
-  {
-    coords.push_back(it->pose); /// \todo make sure this has size = 50
-  }
-}
-
-//---------------------------------------------------------------------------------------------------------------------
 CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
                                              const CartesianPoseList& myPrevPath, const FrenetPoint& prevPathEnd)
 //---------------------------------------------------------------------------------------------------------------------
