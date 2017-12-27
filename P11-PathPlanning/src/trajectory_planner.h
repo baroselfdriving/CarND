@@ -16,7 +16,7 @@ namespace sdcnd_t3p1
 class TrajectoryPlanner
 {
 public:
-  static constexpr double MAX_SPEED = .9 * SPEED_LIMIT;
+  static constexpr double MAX_SPEED = .95 * SPEED_LIMIT;
   static constexpr double SAFE_MANOEUVRE_DISTANCE = 60; //!< how much space do we want to consider a maneouvre
 
   struct State
@@ -61,13 +61,10 @@ private:
   static std::array<double, 6> computePolynomialCoefficients(const PolynomialConstraint& initial,
                                                              const PolynomialConstraint& final);
 
-  /// Generate first nPoints set of waypoints in frenet coordinates given final desired
-  /// longitudinal speed, lateral position, and a time duration to achieve the final state in.
-  void updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd);
-
-
-  /// Given frenet trajectory, update cartesian trajectory
-  void smoothenTrajectory(StateList& history, CartesianPoseList& coords);
+  /// Given forward speed, lateral position along the path, and a time slice, generate nPointsToAdd
+  /// set of waypoints
+  void updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd,
+                        CartesianPoseList& coords);
 
 private:
   const WaypointList& trackWaypoints_;

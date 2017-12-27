@@ -99,7 +99,8 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd)
+void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd,
+                                         CartesianPoseList& coords)
 //---------------------------------------------------------------------------------------------------------------------
 {
   Integrator integrator(SIM_DELTA_TIME);
@@ -136,6 +137,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
   // Fit polynomial between end points
   const std::array<double, 6> sCoeffs = computePolynomialCoefficients(sInitial, sFinal);
   const std::array<double, 6> dCoeffs = computePolynomialCoefficients(dInitial, dFinal);
+  const double maxS = trackWaypoints_.back().frenet.s;
 
   // Generate intermediate waypoints
   double dt = SIM_DELTA_TIME;
@@ -165,15 +167,13 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
     }
     fs.s = integrator.integrate(fs.sv);
 
-    const double maxS = trackWaypoints_.back().frenet.s;
-    if(fs.s > maxS)
+    if(fs.s > MAX_TRACK_LENGTH)
     {
-      fs.s -= maxS;
+      fs.s -= MAX_TRACK_LENGTH;
       integrator.reset(fs.s, fs.sv);
     }
 
     // reference trajectory coordinates
-    std::cout << fs.s << std::endl;
     const CartesianPose refPose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
 
     // push into control and get updated vehicle position
@@ -181,6 +181,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 
     // push into buffer that's passed to simulator
     history_.push_back(fs);
+    coords.push_back(fs.pose);
   }
 }
 
@@ -257,7 +258,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   const auto& pathEnd = history_.back();
 
   // default targets for the trajectory generator
-  static int targetLane = 1; /// \todo replace with correct lane number
+  static int targetLane = 1; /// \todo replace with lane change logic
   double targetSpeed = MAX_SPEED;
   double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
@@ -268,7 +269,6 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     const double deltaDist = distance(vehicleIt->position, me.position);
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      // linearly derate speed to match vehicle in front
       targetSpeed = std::min(MAX_SPEED, vehicleIt->speed)-1;
       targetTime = deltaDist/targetSpeed;
     }
@@ -278,10 +278,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
 
   // Generate waypoints in frenet coordinates
-  updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd);
-
-  // Smooth the cartesian path so generated
-  smoothenTrajectory(history_, path);
+  updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd, path);
 
   return path;
 }

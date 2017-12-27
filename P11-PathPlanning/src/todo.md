@@ -2,7 +2,6 @@
 
 - Vehicle modeling
 - PID tuning
-- Fix vehicle instability at s-boundary
 - Stay with acceleration, jerk and speed limit
 - consider reducing speed for large heading changes
 - safe lane following
@@ -41,4 +40,6 @@ def transition_function(predictions, current_fsm_state, current_pose, cost_funct
 - Graph showing trajectory for unobstructed lane change
 - Problem with generating trajectories in frenet coords for bendy roads where acc constraints can be crossed for straight frenet segments
 - Modified spline lib
+- vehicle model and PID control for speed and steering - mainly for containing lateral accelerations. Gains are
+  tuned for gentle control changes.
 - Brief description of classes and functionality

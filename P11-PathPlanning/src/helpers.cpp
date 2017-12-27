@@ -119,12 +119,6 @@ FrenetPoint getFrenet(const CartesianPose& p, const WaypointList& wps)
 CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  const double maxS = wps.back().frenet.s;
-  while(s > maxS)
-  {
-    s -= maxS;
-  }
-
   WaypointList::const_iterator prev_wp = wps.begin();
   while(s > (prev_wp+1)->frenet.s && (prev_wp != wps.end()-1) )
   {
