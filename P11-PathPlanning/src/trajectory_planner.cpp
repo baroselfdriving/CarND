@@ -264,7 +264,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
 
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
 
-  // Generate waypoints in frenet coordinates
+  // Add waypoints to trajectory
   updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd, path);
 
   return path;
