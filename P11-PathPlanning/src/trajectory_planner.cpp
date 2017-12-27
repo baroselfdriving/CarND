@@ -137,7 +137,6 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
   // Fit polynomial between end points
   const std::array<double, 6> sCoeffs = computePolynomialCoefficients(sInitial, sFinal);
   const std::array<double, 6> dCoeffs = computePolynomialCoefficients(dInitial, dFinal);
-  const double maxS = trackWaypoints_.back().frenet.s;
 
   // Generate intermediate waypoints
   double dt = SIM_DELTA_TIME;
@@ -210,9 +209,10 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
     initial.da = 0;
     initial.dj = 0;
     initial.time = 0;
-    initial.pose.x = me.position.x - cos(me.position.heading);
-    initial.pose.y = me.position.y - sin(me.position.heading);
-    initial.pose.heading = me.position.heading;
+    initial.pose = getCartesianFromFrenet(initial.s, initial.d, trackWaypoints_);
+    //initial.pose.x = me.position.x - cos(me.position.heading);
+    //initial.pose.y = me.position.y - sin(me.position.heading);
+    //initial.pose.heading = me.position.heading;
 
     path.push_back(initial.pose);
     history_.push_back(initial);
@@ -245,7 +245,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   // default targets for the trajectory generator
   static int targetLane = 1; /// \todo replace with lane change logic
   double targetSpeed = MAX_SPEED;
-  double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
+  double targetTime = 2* SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicleIt = findLeadVehicle(targetLane, me.position, others);

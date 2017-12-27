@@ -20,7 +20,7 @@ public:
   static constexpr double MAX_JERK = 10;
 
   static constexpr double STEER_KP = 0.05; //!< proportional gain for steering angle controller
-  static constexpr double STEER_KD = 1; //!< differential gain for steering angle controller
+  static constexpr double STEER_KD = 0.9; //!< differential gain for steering angle controller
   static constexpr double STEER_KI = 0;//0.0001; //!< integral gain for steering angle controller
 
   static constexpr double SPEED_KP = 10;//100; //!< proportional gain for speed controller
@@ -45,11 +45,9 @@ private:
   /// Simulate motion for a time slice
   CartesianPose move();
 
-  /// Apply PID control and generate a steering angle update, given cross track error
-  void updateSteeringAngle(double cte);
-
-  /// Apply PID control and generate an acceleration update, given on-track error
-  void updateSpeed(double refSpeed, double ote);
+  /// Apply PID control and generate a steering angle and acceleration updates, given
+  /// cross track and on-track errors
+  void updateControl(double refSpeed, double ote, double cte);
 
 private:
   double dt_; //!< control period
@@ -60,6 +58,7 @@ private:
   double sumCte_;
   double lastOte_;
   double sumOte_;
+  bool doReset_;
 };
 
 }

@@ -17,7 +17,7 @@ constexpr double VehicleModel::SPEED_KI;
 
 //---------------------------------------------------------------------------------------------------------------------
 VehicleModel::VehicleModel(double dt)
-  : dt_(dt), steeringAngle_(0), speed_(0), lastCte_(0), sumCte_(0), lastOte_(0), sumOte_(0)
+  : dt_(dt), steeringAngle_(0), speed_(0), lastCte_(0), sumCte_(0), lastOte_(0), sumOte_(0), doReset_(true)
 //---------------------------------------------------------------------------------------------------------------------
 {}
 
@@ -32,6 +32,7 @@ void VehicleModel::reset(const CartesianPose& pose)
   sumCte_ = 0;
   lastOte_ = 0;
   sumOte_ = 0;
+  doReset_ = true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -53,8 +54,7 @@ CartesianPose VehicleModel::predict(const CartesianPose& refPose, double refSpee
   std::cout << std::setprecision(6) << cte << " " << ote << " " << refSpeed - speed_ << std::endl;
 
   // do the control
-  updateSteeringAngle(cte);
-  updateSpeed(refSpeed, ote);
+  updateControl(refSpeed, ote, cte);
   return move();
 }
 
@@ -70,25 +70,24 @@ CartesianPose VehicleModel::move()
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void VehicleModel::updateSteeringAngle(double cte)
+void VehicleModel::updateControl(double refSpeed, double ote, double cte)
 //---------------------------------------------------------------------------------------------------------------------
 {
+  if(doReset_)
+  {
+    lastCte_ = cte;
+    lastOte_ = ote;
+    doReset_ = false;
+  }
   // predicted error. If the control is working, these should eventually go to zero
   const double dcte = cte - lastCte_;
+  const double dote = ote - lastOte_;
 
   steeringAngle_ = -(STEER_KP * cte) - (STEER_KD * dcte) - (STEER_KI * sumCte_);
   steeringAngle_ = std::min(MAX_STEERING_ANGLE, std::max(steeringAngle_, -MAX_STEERING_ANGLE));
 
   lastCte_ = cte;
   sumCte_ += cte;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-void VehicleModel::updateSpeed(double refSpeed, double ote)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  // predicted error. If the control is working, these should eventually go to zero
-  const double dote = ote - lastOte_;
 
   double acceleration = (SPEED_KP * ote) + (SPEED_KD * dote) + (SPEED_KI * sumOte_);
   //acceleration = std::min(MAX_ACCELERATION, std::max(acceleration, -MAX_ACCELERATION));
