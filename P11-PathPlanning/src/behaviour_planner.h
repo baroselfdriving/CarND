@@ -11,16 +11,37 @@ namespace sdcnd_t3p1
 class BehaviourPlanner
 {
 public:
-  BehaviourPlanner() = default;
+
+  BehaviourPlanner();
+
   ~BehaviourPlanner() = default;
 
-  Behaviour compute(const BehaviourPredictor::PredictionMap& predictions, const VehicleList& otherVehicles, const Vehicle& me);
+  void reset (const Vehicle& me);
 
-  BehavioursList getSuccessorStates(Behaviour currentBehaviour);
+  Behaviour compute(const BehaviourPredictor::LanePredictionMap& predictions, const Vehicle& me);
+
+  /// Cost function for potential collisions.
+  double collisionCost(const BehaviourPredictor::Prediction& pred);
+
+  /// Cost function for separation distance. Larger distance between vehicles = lower costs
+  double separationCost(const BehaviourPredictor::Prediction& pred);
+
+  /// Cost function of deviation from max speed. Higher cost for higher deviation.
+  double speedDeviationCost(const BehaviourPredictor::Prediction& pred);
+
+  /// Cost function for available lane change options
+  double manouvrebilityCost(const BehaviourPredictor::Prediction& pred);
+
+  /// Cost for changing lanes too frequently
+  double frequentLaneChangeCost(const BehaviourPredictor::Prediction& pred);
+
+private:
+  BehaviourTypesList getSuccessorStates(const Vehicle& me);
+  double computeCost(const BehaviourPredictor::Prediction& prediction);
 
 
 private:
-
+  Behaviour current_;
 };
 
 }

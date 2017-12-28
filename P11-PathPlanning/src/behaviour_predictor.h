@@ -20,13 +20,13 @@ public:
     double laneSpeed;
   };
 
-  using PredictionMap = std::map<int/*lane*/, Prediction>;
+  using LanePredictionMap = std::map<int/*lane*/, Prediction>;
 
 public:
   BehaviourPredictor() = default;
   ~BehaviourPredictor() = default;
 
-  PredictionMap predict(const Vehicle& me, const VehicleList& others);
+  LanePredictionMap predict(const Vehicle& me, const VehicleList& others);
 
 private:
 

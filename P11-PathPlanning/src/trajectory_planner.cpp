@@ -150,8 +150,8 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianPoseList TrajectoryPlanner::computePlan(const Vehicle& me, const VehicleList& others,
-                                             const CartesianPoseList& myPrevPath)
+CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& me,
+                                                 const VehicleList& others, const CartesianPoseList& myPrevPath)
 //---------------------------------------------------------------------------------------------------------------------
 {
   const size_t myPrevPathSz = myPrevPath.size();
@@ -208,7 +208,6 @@ CartesianPoseList TrajectoryPlanner::computePlan(const Vehicle& me, const Vehicl
   }
 
   // default targets for the trajectory generator
-  static int targetLane = 1; /// \todo replace with lane change logic
   double targetSpeed = MAX_SPEED;
   double targetTime = 2*SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 

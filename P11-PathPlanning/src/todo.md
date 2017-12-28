@@ -41,4 +41,6 @@ def transition_function(predictions, current_fsm_state, current_pose, cost_funct
 - vehicle model used and control inputs
 - Error formulation and PID control for speed and steering - mainly for containing lateral accelerations. Gains are
   tuned for gentle control changes.
+- prediction logic
+- behaviours cost functions and weights
 - Brief description of classes and functionality

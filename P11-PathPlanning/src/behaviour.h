@@ -13,12 +13,14 @@ enum BehaviourType
   LANE_CHANGE_RIGHT
 };
 
+using BehaviourTypesList = std::vector<BehaviourType>;
+
 struct Behaviour
 {
   BehaviourType type;
   double targetSpeed;
   int targetLane;
-  double cost;
+  double duration; //!< number of time steps in this behaviour
 };
 
 using BehavioursList = std::vector<Behaviour>;

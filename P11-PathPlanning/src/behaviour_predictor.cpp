@@ -4,6 +4,7 @@
 #include "trajectory_planner.h"
 
 #include <iostream>
+#include <iomanip>
 
 namespace sdcnd_t3p1
 {
@@ -11,10 +12,10 @@ namespace sdcnd_t3p1
 constexpr double BehaviourPredictor::PREDICTION_TIME;
 
 //---------------------------------------------------------------------------------------------------------------------
-BehaviourPredictor::PredictionMap BehaviourPredictor::predict(const Vehicle& me, const VehicleList& others)
+BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle& me, const VehicleList& others)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  PredictionMap pmap;
+  LanePredictionMap pmap;
   Prediction prediction;
   pmap[0] = prediction;
   pmap[1] = prediction;
@@ -63,11 +64,11 @@ BehaviourPredictor::PredictionMap BehaviourPredictor::predict(const Vehicle& me,
       prediction.freeDistance = freeDistAhead; // how much free space we've got. Only consider space up ahead.
       prediction.laneSpeed = std::min(laneSpeed, SPEED_LIMIT);
     }
-    std::cout << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
-              << "] v: " << prediction.laneSpeed << std::endl;
+    //std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
+    //          << "] v: " << prediction.laneSpeed << std::endl;
   }
 
-  std::cout << "=====" << std::endl;
+  //std::cout << "=====" << std::endl;
   return pmap;
 }
 

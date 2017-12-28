@@ -42,7 +42,7 @@ public:
   void reset(const CartesianPose& pose) { model_.reset(pose); history_.clear(); }
 
   /// Call every cycle to generate a list of waypoints for the car to follow
-  CartesianPoseList computePlan(const Vehicle& me, const VehicleList& others,
+  CartesianPoseList computePlan(int targetLane, const Vehicle& me, const VehicleList& others,
                                 const CartesianPoseList& myPrevPath);
 
 private:

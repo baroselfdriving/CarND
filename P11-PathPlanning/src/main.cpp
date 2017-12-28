@@ -96,6 +96,7 @@ int main()
           if(doReset)
           {
             trajPlanner.reset(car.position);
+            behplanner.reset(car);
             doReset = false;
           }
           /// \note: The simulated car doesn't cover all the points passed to the sim in the last iteration. The
@@ -147,8 +148,8 @@ int main()
 
           /// ------------ PROJECT IMPLEMENTATION --------------------
           const auto predictions = predictor.predict(car, otherVehicles);
-          //behplanner.compute(predictions);
-          const auto path = trajPlanner.computePlan(car, otherVehicles, previousPath);
+          auto behaviour = behplanner.compute(predictions, car);
+          const auto path = trajPlanner.computePlan(behaviour.targetLane, car, otherVehicles, previousPath);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );
