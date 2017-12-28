@@ -210,7 +210,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   // default targets for the trajectory generator
   static int targetLane = 1; /// \todo replace with lane change logic
   double targetSpeed = MAX_SPEED;
-  double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
+  double targetTime = 2*SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicleIt = findLeadVehicle(targetLane, me.position, others);

@@ -1,12 +1,10 @@
 # TODO
 
-- Vehicle modeling
-- PID tuning
-- Stay with acceleration, jerk and speed limit
-- consider reducing speed for large heading changes
-- safe lane following
-- deal with vehicle barging in to our path on short notice
 - behaviours
+- deal with vehicle barging in to our path on short notice
+- safe lane following - speed derating
+- PID tuning to stay within acceleration, jerk and speed limit
+- consider reducing speed for large heading changes
 
 # Behaviours implementation
 
@@ -40,6 +38,7 @@ def transition_function(predictions, current_fsm_state, current_pose, cost_funct
 - Graph showing trajectory for unobstructed lane change
 - Problem with generating trajectories in frenet coords for bendy roads where acc constraints can be crossed for straight frenet segments
 - Modified spline lib
-- vehicle model and PID control for speed and steering - mainly for containing lateral accelerations. Gains are
+- vehicle model used and control inputs
+- Error formulation and PID control for speed and steering - mainly for containing lateral accelerations. Gains are
   tuned for gentle control changes.
 - Brief description of classes and functionality

@@ -17,7 +17,7 @@ class TrajectoryPlanner
 {
 public:
   static constexpr double MAX_SPEED = .9 * SPEED_LIMIT;
-  static constexpr double SAFE_MANOEUVRE_DISTANCE = 100; //!< how much space do we want to consider a maneouvre
+  static constexpr double SAFE_MANOEUVRE_DISTANCE = 60; //!< how much space do we want to consider a maneouvre
 
   struct State
   {
