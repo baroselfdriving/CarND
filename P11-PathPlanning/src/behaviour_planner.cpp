@@ -66,6 +66,11 @@ Behaviour BehaviourPlanner::compute(const BehaviourPredictor::LanePredictionMap&
 
   current_.duration += 1;
   const int myLane = getLaneNumberFromFrenetD(me.frenet.d);
+  if((myLane > 2) || (myLane < 0))
+  {
+    current_.targetLane = 1;
+    return current_; // something terrible happened, such as car off the road
+  }
   const auto successorStates = getSuccessorStates(me);
   for(const auto& availableState : successorStates)
   {

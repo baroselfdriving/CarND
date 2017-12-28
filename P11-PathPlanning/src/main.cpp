@@ -157,23 +157,6 @@ int main()
           }
           /// ------------ END PROJECT IMPLEMENTATION --------------------
 
-/*
-          /// ------------ TEST --------------------
-          double dist_inc = 0.5;
-          for(int i = 0; i < 50; i++)
-          {
-            sdcnd_t3p1::FrenetPoint nextF;
-            nextF.s = car.frenet.s + (i+1) * dist_inc;
-            nextF.d = 6;
-
-            sdcnd_t3p1::CartesianPose xy = sdcnd_t3p1::getCartesianFromFrenet(nextF.s, nextF.d, fineWaypoints);
-
-            next_x_vals.push_back(xy.x);
-            next_y_vals.push_back(xy.y);
-          }
-          /// ------------- END TEST -------------------
-*/
-
           json msgJson;
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;

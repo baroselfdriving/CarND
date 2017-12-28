@@ -209,7 +209,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
 
   // default targets for the trajectory generator
   double targetSpeed = MAX_SPEED;
-  double targetTime = 2*SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
+  double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicles = findNearestVehicles(targetLane, me.position, others);
@@ -218,7 +218,8 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
     const double deltaDist = distance(vehicles.ahead->position, me.position);
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      targetSpeed = 2*deltaDist/targetTime; /// \todo derate speed
+      targetSpeed = vehicles.ahead->speed;
+      targetTime = (deltaDist - .1 * SAFE_MANOEUVRE_DISTANCE)/targetSpeed;
     }
     //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }

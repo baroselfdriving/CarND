@@ -36,7 +36,11 @@ public:
   double frequentLaneChangeCost(const BehaviourPredictor::Prediction& pred);
 
 private:
+
+  /// Get valid successor state
   BehaviourTypesList getSuccessorStates(const Vehicle& me);
+
+  /// Compute total cost for a change into a lane
   double computeCost(const BehaviourPredictor::Prediction& prediction);
 
 
