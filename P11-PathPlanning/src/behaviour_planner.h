@@ -3,6 +3,7 @@
 
 #include "vehicle.h"
 #include "behaviour.h"
+#include "behaviour_predictor.h"
 
 namespace sdcnd_t3p1
 {
@@ -13,7 +14,7 @@ public:
   BehaviourPlanner() = default;
   ~BehaviourPlanner() = default;
 
-  Behaviour compute(const VehicleList& otherVehicles, const Vehicle& me);
+  Behaviour compute(const BehaviourPredictor::PredictionMap& predictions, const VehicleList& otherVehicles, const Vehicle& me);
 
   BehavioursList getSuccessorStates(Behaviour currentBehaviour);
 
