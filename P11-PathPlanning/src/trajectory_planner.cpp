@@ -219,8 +219,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(const Vehicle& me, const Vehicl
     const double deltaDist = distance(vehicles.ahead->position, me.position);
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      targetSpeed = std::min(MAX_SPEED, vehicles.ahead->speed)-1;
-      targetTime = deltaDist/targetSpeed;///\todo deal with divie by zero
+      targetSpeed = 2*deltaDist/targetTime; /// \todo derate speed
     }
     //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }

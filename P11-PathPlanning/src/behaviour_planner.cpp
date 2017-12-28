@@ -4,7 +4,7 @@ namespace sdcnd_t3p1
 {
 
 //---------------------------------------------------------------------------------------------------------------------
-Behaviour BehaviourPlanner::compute(const VehicleList& otherVehicles, const Vehicle& me)
+Behaviour BehaviourPlanner::compute(const BehaviourPredictor::PredictionMap& predictions, const VehicleList& otherVehicles, const Vehicle& me)
 //---------------------------------------------------------------------------------------------------------------------
 {
   Behaviour b;

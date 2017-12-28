@@ -16,6 +16,8 @@ enum BehaviourType
 struct Behaviour
 {
   BehaviourType type;
+  double targetSpeed;
+  int targetLane;
   double cost;
 };
 
