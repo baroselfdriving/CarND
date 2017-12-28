@@ -2,7 +2,7 @@
 #define BEHAVIOUR_H
 
 #include <vector>
-
+#include <map>
 namespace sdcnd_t3p1
 {
 
@@ -14,6 +14,11 @@ enum BehaviourType
 };
 
 using BehaviourTypesList = std::vector<BehaviourType>;
+
+static const std::map<BehaviourType, std::string> BEHAVIOURTYPE_STRING_MAP = {
+  { BehaviourType::LANE_FOLLOW, "LANE_FOLLOW" },
+  { BehaviourType::LANE_CHANGE_LEFT, "LANE_CHANGE_LEFT" },
+  { BehaviourType::LANE_CHANGE_RIGHT, "LANE_CHANGE_RIGHT"} };
 
 struct Behaviour
 {

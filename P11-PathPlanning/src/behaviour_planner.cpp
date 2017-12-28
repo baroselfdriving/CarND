@@ -119,9 +119,11 @@ Behaviour BehaviourPlanner::compute(const BehaviourPredictor::LanePredictionMap&
   behaviour.targetLane = predictionForBehaviour[bestBehaviourType].laneNumber;
   behaviour.targetSpeed = predictionForBehaviour[bestBehaviourType].laneSpeed;
 
+  if(current_.type != behaviour.type)
+  {
+    std::cout << BEHAVIOURTYPE_STRING_MAP.at(behaviour.type) << " : " << behaviour.targetLane << std::endl;
+  }
   current_ = behaviour;
-
-  std::cout << "B: " << current_.type << " " << current_.duration << " " << current_.targetLane << std::endl;
 
   return current_;
 }

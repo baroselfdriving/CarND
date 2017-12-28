@@ -19,11 +19,11 @@ public:
   static constexpr double MAX_ACCELERATION = 10;
   static constexpr double MAX_JERK = 10;
 
-  static constexpr double STEER_KP = 0.05; //!< proportional gain for steering angle controller
+  static constexpr double STEER_KP = 0.08; //!< proportional gain for steering angle controller
   static constexpr double STEER_KD = 0.9; //!< differential gain for steering angle controller
   static constexpr double STEER_KI = 0;//0.0001; //!< integral gain for steering angle controller
 
-  static constexpr double SPEED_KP = 10;//100; //!< proportional gain for speed controller
+  static constexpr double SPEED_KP = 1;//100; //!< proportional gain for speed controller
   static constexpr double SPEED_KD = 100;//100; //!< differential gain for speed controller
   static constexpr double SPEED_KI = 0;//0; //!< integral gain for speed controller
 
