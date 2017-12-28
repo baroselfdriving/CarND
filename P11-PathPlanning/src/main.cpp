@@ -1,4 +1,6 @@
 #include "helpers.h"
+#include "behaviour_predictor.h"
+#include "behaviour_planner.h"
 #include "trajectory_planner.h"
 #include "waypoint.h"
 #include "vehicle.h"
@@ -51,10 +53,13 @@ int main()
   // beef up the number of waypoints and make it smooth
   sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 6);
   sdcnd_t3p1::TrajectoryPlanner trajPlanner(fineWaypoints);
+  sdcnd_t3p1::BehaviourPredictor predictor;
+  sdcnd_t3p1::BehaviourPlanner behplanner;
 
   uWS::Hub h;
   bool doReset = false;
-  h.onMessage([&trajPlanner, &doReset](uWS::WebSocket<uWS::SERVER> ws, char *pData, size_t length, uWS::OpCode opCode)
+  h.onMessage([&trajPlanner, &predictor, &behplanner, &doReset](uWS::WebSocket<uWS::SERVER> ws,
+              char *pData, size_t length, uWS::OpCode opCode)
   {
     (void)opCode;
 
@@ -141,7 +146,9 @@ int main()
           std::vector<double> next_y_vals;
 
           /// ------------ PROJECT IMPLEMENTATION --------------------
-          sdcnd_t3p1::CartesianPoseList path = trajPlanner.getPlan(car, otherVehicles, previousPath);
+          const auto predictions = predictor.predict(car, otherVehicles);
+          //behplanner.compute(predictions);
+          const auto path = trajPlanner.computePlan(car, otherVehicles, previousPath);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );

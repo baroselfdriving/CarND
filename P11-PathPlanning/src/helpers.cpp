@@ -246,13 +246,16 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles)
+NearestVehicles findNearestVehicles(int lane, const CartesianPose& me, const VehicleList& vehicles)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  // Lead vehicle is the nearest one ahead of me in the specified lane
+  NearestVehicles nearestVehicles;
+  nearestVehicles.ahead = vehicles.end();
+  nearestVehicles.behind = vehicles.end();
 
-  double nearestDist = std::numeric_limits<double>::max();
-  VehicleList::const_iterator nearestVehicle = vehicles.end();
+  double nearestAhead = std::numeric_limits<double>::max();
+  double nearestBehind = std::numeric_limits<double>::max();
+
   for(VehicleList::const_iterator other = vehicles.begin(); other != vehicles.end(); ++other)
   {
     const int otherLane = getLaneNumberFromFrenetD(other->frenet.d);
@@ -261,24 +264,36 @@ VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, c
       continue;
     }
 
-    // To find if the other vehicle is behind, compute X coordinate of the other vehicle in the
-    // car frame and check if the X value is negative
+    /// \note: using Frenet coordinates here would have resulted in simpler math except at the track boundary
+
+    // compute X-coordinate (car longitudinal axis) of the other vehicle. If > 0, it is ahead, else behind
     const double ca = cos(me.heading);
     const double sa = sin(me.heading);
     const double x = ca * (other->position.x - me.x) + sa * (other->position.y - me.y);
+
+    // vehicle is behind
+    const double dist = distance(me, other->position);
     if( x < 0 )
     {
-      continue;
+      if(dist < nearestBehind)
+      {
+        nearestBehind = dist;
+        nearestVehicles.behind = other;
+      }
     }
 
-    double dist = distance(me, other->position);
-    if( dist < nearestDist )
+    // vehicle is ahead
+    else
     {
-      nearestDist = dist;
-      nearestVehicle = other;
+      if( dist < nearestAhead )
+      {
+        nearestAhead = dist;
+        nearestVehicles.ahead = other;
+      }
     }
+
   }
-  return nearestVehicle;
+  return nearestVehicles;
 }
 
 }

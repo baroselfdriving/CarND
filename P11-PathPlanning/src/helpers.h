@@ -51,8 +51,14 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
 /// Populate with 'n' intermediate points between each pair of input waypoints using cubic spline fit.
 WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n);
 
+struct NearestVehicles
+{
+  VehicleList::const_iterator ahead;
+  VehicleList::const_iterator behind;
+};
+
 /// Find nearest vehicle ahead of me in the specified lane. If no vehicle, then return vehicles.end()
-VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles);
+NearestVehicles findNearestVehicles(int lane, const CartesianPose& me, const VehicleList& vehicles);
 
 }
 

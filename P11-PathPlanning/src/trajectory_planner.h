@@ -17,7 +17,7 @@ class TrajectoryPlanner
 {
 public:
   static constexpr double MAX_SPEED = .9 * SPEED_LIMIT;
-  static constexpr double SAFE_MANOEUVRE_DISTANCE = 60; //!< how much space do we want to consider a maneouvre
+  static constexpr double SAFE_MANOEUVRE_DISTANCE = 60; //!< how much space do we want for a maneouvre
 
   struct State
   {
@@ -42,8 +42,8 @@ public:
   void reset(const CartesianPose& pose) { model_.reset(pose); history_.clear(); }
 
   /// Call every cycle to generate a list of waypoints for the car to follow
-  CartesianPoseList getPlan(const Vehicle& me, const VehicleList& others,
-                            const CartesianPoseList& myPrevPath);
+  CartesianPoseList computePlan(const Vehicle& me, const VehicleList& others,
+                                const CartesianPoseList& myPrevPath);
 
 private:
   struct PolynomialConstraint

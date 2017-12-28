@@ -52,7 +52,7 @@ CartesianPose VehicleModel::predict(const CartesianPose& refPose, double refSpee
   // compute on-track error
   const double ote = trackingError.x * cos(refPose.heading) + trackingError.y * sin(refPose.heading);
 
-  std::cout << std::setprecision(6) << cte << " " << ote << " " << refSpeed - speed_ << std::endl;
+  //std::cout << std::setprecision(6) << cte << " " << ote << " " << refSpeed - speed_ << std::endl;
 
   // do the control
   updateControl(refSpeed, ote, cte);

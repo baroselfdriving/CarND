@@ -150,7 +150,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleList& others,
+CartesianPoseList TrajectoryPlanner::computePlan(const Vehicle& me, const VehicleList& others,
                                              const CartesianPoseList& myPrevPath)
 //---------------------------------------------------------------------------------------------------------------------
 {
@@ -213,13 +213,13 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   double targetTime = 2*SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
-  auto vehicleIt = findLeadVehicle(targetLane, me.position, others);
-  if( vehicleIt != others.end() )
+  auto vehicles = findNearestVehicles(targetLane, me.position, others);
+  if( vehicles.ahead != others.end() )
   {
-    const double deltaDist = distance(vehicleIt->position, me.position);
+    const double deltaDist = distance(vehicles.ahead->position, me.position);
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      targetSpeed = std::min(MAX_SPEED, vehicleIt->speed)-1;
+      targetSpeed = std::min(MAX_SPEED, vehicles.ahead->speed)-1;
       targetTime = deltaDist/targetSpeed;///\todo deal with divie by zero
     }
     //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;

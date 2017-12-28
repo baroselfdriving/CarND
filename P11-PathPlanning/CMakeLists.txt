@@ -29,6 +29,8 @@ set(sources
   src/behaviour.h
   src/behaviour_planner.h
   src/behaviour_planner.cpp
+  src/behaviour_predictor.h
+  src/behaviour_predictor.cpp
   src/waypoint.h
   src/vehicle.h
   src/vehicle_model.h
