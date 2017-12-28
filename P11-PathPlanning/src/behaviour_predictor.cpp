@@ -43,7 +43,8 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
         if( dist < TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE)
         {
           // assumed worst case: we continue at current speed but vehicle behind speeds up by 50%
-          freeDistRear = dist - (1.5*nearest.behind->speed - me.speed) * PREDICTION_TIME;
+          const double scale = 1.5;
+          freeDistRear = dist - (scale*nearest.behind->speed - me.speed) * PREDICTION_TIME;
         }
       }
     }
@@ -53,8 +54,9 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
     if(nearest.ahead != others.end())
     {
       // assumed worst case: we continue at current speed but vehicle in front reduces speed by 50%
+      const double scale = .5;
       freeDistAhead = distance(me.position, nearest.ahead->position)
-          - (me.speed - 0.5*nearest.ahead->speed) * PREDICTION_TIME;
+          - (me.speed - scale*nearest.ahead->speed) * PREDICTION_TIME;
       laneSpeed = nearest.ahead->speed;
     }
 
