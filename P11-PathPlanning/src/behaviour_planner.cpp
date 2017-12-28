@@ -13,4 +13,22 @@ Behaviour BehaviourPlanner::compute(const VehicleList& otherVehicles, const Vehi
   return b;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
+BehavioursList BehaviourPlanner::getSuccessorStates(Behaviour currentBehaviour)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  BehavioursList options;
+
+  switch(currentBehaviour.type)
+  {
+  case BehaviourType::LANE_FOLLOW:
+    break;
+  case BehaviourType::LANE_CHANGE_LEFT:
+    break;
+  case BehaviourType::LANE_CHANGE_RIGHT:
+    break;
+  };
+  return options;
+}
+
 }

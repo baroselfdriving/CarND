@@ -15,6 +15,9 @@ public:
 
   Behaviour compute(const VehicleList& otherVehicles, const Vehicle& me);
 
+  BehavioursList getSuccessorStates(Behaviour currentBehaviour);
+
+
 private:
 
 };

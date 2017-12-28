@@ -1,6 +1,8 @@
 #ifndef BEHAVIOUR_H
 #define BEHAVIOUR_H
 
+#include <vector>
+
 namespace sdcnd_t3p1
 {
 
@@ -16,6 +18,8 @@ struct Behaviour
   BehaviourType type;
   double cost;
 };
+
+using BehavioursList = std::vector<Behaviour>;
 
 }
 #endif // BEHAVIOUR_H

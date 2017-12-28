@@ -17,7 +17,7 @@ constexpr double VehicleModel::SPEED_KI;
 
 //---------------------------------------------------------------------------------------------------------------------
 VehicleModel::VehicleModel(double dt)
-  : dt_(dt), steeringAngle_(0), speed_(0), lastCte_(0), sumCte_(0), lastOte_(0), sumOte_(0), doReset_(true)
+  : dt_(dt), steeringAngle_(0), speed_(0), lastCte_(0), sumCte_(0), lastOte_(0), sumOte_(0), lastAcceleration_(0), doReset_(true)
 //---------------------------------------------------------------------------------------------------------------------
 {}
 
@@ -32,6 +32,7 @@ void VehicleModel::reset(const CartesianPose& pose)
   sumCte_ = 0;
   lastOte_ = 0;
   sumOte_ = 0;
+  lastAcceleration_ = 0;
   doReset_ = true;
 }
 
@@ -90,10 +91,11 @@ void VehicleModel::updateControl(double refSpeed, double ote, double cte)
   sumCte_ += cte;
 
   double acceleration = (SPEED_KP * ote) + (SPEED_KD * dote) + (SPEED_KI * sumOte_);
-  //acceleration = std::min(MAX_ACCELERATION, std::max(acceleration, -MAX_ACCELERATION));
+  acceleration = std::min(MAX_ACCELERATION, std::max(acceleration, -MAX_ACCELERATION));
 
-  //speed_ += acceleration * dt_;
-  speed_ = refSpeed + acceleration * dt_;
+  speed_ += 0.5 * (lastAcceleration_ + acceleration) * dt_;
+  lastAcceleration_ = acceleration;
+  //speed_ = refSpeed + acceleration * dt_;
 
   lastOte_ = ote;
   sumOte_ += ote;

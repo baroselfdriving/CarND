@@ -21,41 +21,6 @@ TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
 {
 }
 
-//---------------------------------------------------------------------------------------------------------------------
-VehicleList::const_iterator TrajectoryPlanner::findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  // Lead vehicle is the nearest one ahead of me in the specified lane
-
-  double nearestDist = std::numeric_limits<double>::max();
-  VehicleList::const_iterator nearestVehicle = vehicles.end();
-  for(VehicleList::const_iterator other = vehicles.begin(); other != vehicles.end(); ++other)
-  {
-    const int otherLane = getLaneNumberFromFrenetD(other->frenet.d);
-    if(lane != otherLane)
-    {
-      continue;
-    }
-
-    // To find if the other vehicle is behind, compute X coordinate of the other vehicle in the
-    // car frame and check if the X value is negative
-    const double ca = cos(me.heading);
-    const double sa = sin(me.heading);
-    const double x = ca * (other->position.x - me.x) + sa * (other->position.y - me.y);
-    if( x < 0 )
-    {
-      continue;
-    }
-
-    double dist = distance(me, other->position);
-    if( dist < nearestDist )
-    {
-      nearestDist = dist;
-      nearestVehicle = other;
-    }
-  }
-  return nearestVehicle;
-}
 
 //---------------------------------------------------------------------------------------------------------------------
 std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const PolynomialConstraint& initial, const PolynomialConstraint& final)
@@ -245,7 +210,7 @@ CartesianPoseList TrajectoryPlanner::getPlan(const Vehicle& me, const VehicleLis
   // default targets for the trajectory generator
   static int targetLane = 1; /// \todo replace with lane change logic
   double targetSpeed = MAX_SPEED;
-  double targetTime = 2* SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
+  double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicleIt = findLeadVehicle(targetLane, me.position, others);

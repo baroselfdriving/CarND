@@ -2,7 +2,7 @@
 #define HELPERS_H
 
 #include "constants.h"
-#include "waypoint.h"
+#include "vehicle.h"
 
 #include <string>
 #include <cmath>
@@ -50,6 +50,9 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
 
 /// Populate with 'n' intermediate points between each pair of input waypoints using cubic spline fit.
 WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n);
+
+/// Find nearest vehicle ahead of me in the specified lane. If no vehicle, then return vehicles.end()
+VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles);
 
 }
 

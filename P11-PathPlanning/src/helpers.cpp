@@ -245,4 +245,40 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
   return finePoints;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
+VehicleList::const_iterator findLeadVehicle(int lane, const CartesianPose& me, const VehicleList& vehicles)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  // Lead vehicle is the nearest one ahead of me in the specified lane
+
+  double nearestDist = std::numeric_limits<double>::max();
+  VehicleList::const_iterator nearestVehicle = vehicles.end();
+  for(VehicleList::const_iterator other = vehicles.begin(); other != vehicles.end(); ++other)
+  {
+    const int otherLane = getLaneNumberFromFrenetD(other->frenet.d);
+    if(lane != otherLane)
+    {
+      continue;
+    }
+
+    // To find if the other vehicle is behind, compute X coordinate of the other vehicle in the
+    // car frame and check if the X value is negative
+    const double ca = cos(me.heading);
+    const double sa = sin(me.heading);
+    const double x = ca * (other->position.x - me.x) + sa * (other->position.y - me.y);
+    if( x < 0 )
+    {
+      continue;
+    }
+
+    double dist = distance(me, other->position);
+    if( dist < nearestDist )
+    {
+      nearestDist = dist;
+      nearestVehicle = other;
+    }
+  }
+  return nearestVehicle;
+}
+
 }

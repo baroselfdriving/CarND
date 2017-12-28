@@ -24,7 +24,7 @@ public:
   static constexpr double STEER_KI = 0;//0.0001; //!< integral gain for steering angle controller
 
   static constexpr double SPEED_KP = 10;//100; //!< proportional gain for speed controller
-  static constexpr double SPEED_KD = 0;//100; //!< differential gain for speed controller
+  static constexpr double SPEED_KD = 100;//100; //!< differential gain for speed controller
   static constexpr double SPEED_KI = 0;//0; //!< integral gain for speed controller
 
 public:
@@ -58,6 +58,7 @@ private:
   double sumCte_;
   double lastOte_;
   double sumOte_;
+  double lastAcceleration_;
   bool doReset_;
 };
 
