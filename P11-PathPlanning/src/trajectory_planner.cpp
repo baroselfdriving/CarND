@@ -151,7 +151,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& me,
+CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehicle& me,
                                                  const VehicleList& others, const CartesianPoseList& myPrevPath)
 //---------------------------------------------------------------------------------------------------------------------
 {
@@ -206,11 +206,11 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
   }
 
   // default targets for the trajectory generator
-  const double targetD = getFrenetDFromLaneNumber(targetLane) ;
+  const double targetD = getFrenetDFromLaneNumber(behaviour.targetLane) ;
   double targetSpeed = MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
-  auto vehicles = findNearestVehicles(targetLane, me.position, others);
+  auto vehicles = findNearestVehicles(behaviour.targetLane, me.position, others);
   if( vehicles.ahead != others.end() )
   {
     const double deltaDist = distance(vehicles.ahead->position, me.position);
