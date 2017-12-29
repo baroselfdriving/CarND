@@ -13,7 +13,6 @@ namespace sdcnd_t3p1
 {
 
 constexpr double TrajectoryPlanner::MAX_SPEED;
-constexpr double TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
 constexpr double TrajectoryPlanner::MIN_RESPONSE_TIME;
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -207,26 +206,20 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
   }
 
   // default targets for the trajectory generator
+  const double targetD = getFrenetDFromLaneNumber(targetLane) ;
   double targetSpeed = MAX_SPEED;
-  double targetTime = SAFE_MANOEUVRE_DISTANCE/MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicles = findNearestVehicles(targetLane, me.position, others);
   if( vehicles.ahead != others.end() )
   {
     const double deltaDist = distance(vehicles.ahead->position, me.position);
-    if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
-    {
-      targetSpeed = std::max(.1, .8 * vehicles.ahead->speed);
-      targetTime = std::max(MIN_RESPONSE_TIME, deltaDist/targetSpeed);
-    }
+    targetSpeed = std::min(MAX_SPEED, std::max(0., (deltaDist-1)/MIN_RESPONSE_TIME) );
   }
 
-  double targetD = getFrenetDFromLaneNumber(targetLane) ;
-
   // Add waypoints to trajectory
-  //std::cout << "Targets : " << targetSpeed << ", " << targetTime << std::endl;
-  updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd, path);
+  //std::cout << "Targets : " << targetSpeed << ", " << targetD << std::endl;
+  updateTrajectory(targetSpeed, targetD, MIN_RESPONSE_TIME, nPointsToAdd, path);
 
   return path;
 }

@@ -11,6 +11,9 @@ namespace sdcnd_t3p1
 class BehaviourPlanner
 {
 public:
+  static constexpr double MIN_LANE_KEEP_TIMESTEPS = 50;
+
+public:
 
   BehaviourPlanner();
 

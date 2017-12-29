@@ -20,5 +20,6 @@
 - Error formulation and PID control for speed and steering - mainly for containing lateral accelerations. Gains are
   tuned for gentle control changes.
 - prediction logic - constant velocity constant lane
+- using min_response_time as the criterion for speed control and lane changes (based on safe driving heuristics)
 - behaviours cost functions and weights
 - Brief description of classes and functionality

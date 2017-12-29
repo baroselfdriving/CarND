@@ -16,15 +16,15 @@ class VehicleModel
 public:
   static constexpr double Lf = 2.67; //!< Distance from CoM to front axle. Using value from SDCND Term 2 MPC project
   static constexpr double MAX_STEERING_ANGLE = 25 * M_PI/180.;
-  static constexpr double MAX_ACCELERATION = 10;
+  static constexpr double MAX_ACCELERATION = 7;
   static constexpr double MAX_JERK = 10;
 
   static constexpr double STEER_KP = 0.05; //!< proportional gain for steering angle controller
   static constexpr double STEER_KD = 0.9; //!< differential gain for steering angle controller
   static constexpr double STEER_KI = 0;//0.0001; //!< integral gain for steering angle controller
 
-  static constexpr double SPEED_KP = 5; //!< proportional gain for speed controller
-  static constexpr double SPEED_KD = 100; //!< differential gain for speed controller
+  static constexpr double SPEED_KP = 3; //!< proportional gain for speed controller
+  static constexpr double SPEED_KD = 200; //!< differential gain for speed controller
   static constexpr double SPEED_KI = 0;//0; //!< integral gain for speed controller
 
 public:

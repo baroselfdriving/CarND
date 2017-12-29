@@ -39,13 +39,10 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       const int theirLane = getLaneNumberFromFrenetD(nearest.behind->frenet.d);
       if(theirLane != myLane)
       {
+        // assumed worst case: we continue at current speed but vehicle behind speeds up by 50%
         const double dist = distance(me.position, nearest.behind->position);
-        if( dist < TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE)
-        {
-          // assumed worst case: we continue at current speed but vehicle behind speeds up by 50%
-          const double scale = 1.5;
-          freeDistRear = dist - (scale*nearest.behind->speed - me.speed) * PREDICTION_TIME;
-        }
+        const double scale = 1.5;
+        freeDistRear = dist - (scale*nearest.behind->speed - me.speed) * PREDICTION_TIME;
       }
     }
 
@@ -57,25 +54,21 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       const double scale = .5;
       freeDistAhead = distance(me.position, nearest.ahead->position)
           - (me.speed - scale*nearest.ahead->speed) * PREDICTION_TIME;
-      laneSpeed = nearest.ahead->speed;
+      laneSpeed = std::min(SPEED_LIMIT, std::max(0., (freeDistAhead-1)/TrajectoryPlanner::MIN_RESPONSE_TIME) );
+
     }
 
     if((freeDistRear > 0) && // vehicle behind does not overtake us
        (freeDistAhead > 0) ) // we don't overtake vehicle ahead
     {
       prediction.freeDistance = freeDistAhead; // how much free space we've got. Only consider space up ahead.
-      if(freeDistAhead > TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE)
-      {
-        laneSpeed = SPEED_LIMIT;
-      }
-      prediction.laneSpeed = std::min(laneSpeed, SPEED_LIMIT);
+      prediction.laneSpeed = laneSpeed;
     }
-    /*
+/*
     std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
               << "] v: " << prediction.laneSpeed << std::endl;
-              */
+*/
   }
-
   //std::cout << "=====" << std::endl;
   return pmap;
 }

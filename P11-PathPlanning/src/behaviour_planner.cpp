@@ -7,6 +7,8 @@
 namespace sdcnd_t3p1
 {
 
+constexpr double BehaviourPlanner::MIN_LANE_KEEP_TIMESTEPS;
+
 //---------------------------------------------------------------------------------------------------------------------
 BehaviourPlanner::BehaviourPlanner()
 //---------------------------------------------------------------------------------------------------------------------
@@ -39,13 +41,16 @@ BehaviourTypesList BehaviourPlanner::getSuccessorStates(const BehaviourPredictor
   case BehaviourType::LANE_FOLLOW:
   {
     list.push_back(BehaviourType::LANE_FOLLOW);
-    if( predictions.at(std::max(0,myLane-1)).freeDistance > 0)
+    if( current_.duration > MIN_LANE_KEEP_TIMESTEPS)
     {
-      list.push_back(BehaviourType::LANE_CHANGE_LEFT);
-    }
-    if( predictions.at(std::min(2,myLane+1)).freeDistance > 0)
-    {
-      list.push_back(BehaviourType::LANE_CHANGE_RIGHT);
+      if( predictions.at(std::max(0,myLane-1)).freeDistance > 0)
+      {
+        list.push_back(BehaviourType::LANE_CHANGE_LEFT);
+      }
+      if( predictions.at(std::min(2,myLane+1)).freeDistance > 0)
+      {
+        list.push_back(BehaviourType::LANE_CHANGE_RIGHT);
+      }
     }
     break;
   }
@@ -148,7 +153,7 @@ double BehaviourPlanner::computeCost(const BehaviourPredictor::Prediction& predi
       200 * collisionCost(prediction) +
       90 * speedDeviationCost(prediction) +
       50 * manouvrebilityCost(prediction) +
-      70 * frequentLaneChangeCost(prediction) +
+      80 * frequentLaneChangeCost(prediction) +
       100 * separationCost(prediction);
 }
 
@@ -159,7 +164,7 @@ double BehaviourPlanner::collisionCost(const BehaviourPredictor::Prediction& pre
 {
   double cost = 1.;
 
-  if(pred.freeDistance > TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE)
+  if(pred.freeDistance > TrajectoryPlanner::MIN_RESPONSE_TIME * pred.laneSpeed)
   {
     cost = -1.;
   }
@@ -171,18 +176,19 @@ double BehaviourPlanner::collisionCost(const BehaviourPredictor::Prediction& pre
 double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pred)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  const double goodSeparation = 3*TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
-  if(pred.freeDistance < TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE)
+  const double goodSeparation = 2*TrajectoryPlanner::MIN_RESPONSE_TIME;
+  const double separation = pred.freeDistance/pred.laneSpeed;
+  if(separation < TrajectoryPlanner::MIN_RESPONSE_TIME)
   {
     return 1.;
   }
-  else if(pred.freeDistance > goodSeparation)
+  else if(separation > goodSeparation)
   {
     return -1.;
   }
   else
   {
-    return 2 - pred.freeDistance/TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
+    return 3 - 2*separation/TrajectoryPlanner::MIN_RESPONSE_TIME;
   }
 }
 
@@ -213,18 +219,17 @@ double BehaviourPlanner::frequentLaneChangeCost(const BehaviourPredictor::Predic
 //---------------------------------------------------------------------------------------------------------------------
 {
   double cost = 0;
-  const double minDuration = 100;
-  if( current_.duration < minDuration)
+  if( current_.duration < MIN_LANE_KEEP_TIMESTEPS)
   {
     cost = 1;
   }
-  else if( current_.duration > 2*minDuration)
+  else if( current_.duration > 2*MIN_LANE_KEEP_TIMESTEPS)
   {
     cost = -1;
   }
   else
   {
-    cost = 3 - 2*current_.duration/minDuration;
+    cost = 3 - 2*current_.duration/MIN_LANE_KEEP_TIMESTEPS;
   }
   return cost;
 }
