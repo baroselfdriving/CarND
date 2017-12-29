@@ -38,6 +38,7 @@ public:
 
 public:
   TrajectoryPlanner(const WaypointList& wps);
+
   ~TrajectoryPlanner() = default;
 
   void reset(const CartesianPose& pose) { model_.reset(pose); history_.clear(); }

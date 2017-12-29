@@ -1,9 +1,7 @@
 # TODO
 
-- behaviours, cost functions tuning for efficient lane changes
 - deal with vehicle barging in to our path on short notice
-- safe lane following - speed derating
-- PID tuning to stay within acceleration, jerk and speed limit
+- avoiding collisions when changing lane
 - comment out all std::cout
 
 # Behaviours implementation
