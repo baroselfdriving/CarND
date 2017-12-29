@@ -1,8 +1,8 @@
 #include "behaviour_planner.h"
-#include "trajectory_planner.h"
 #include "helpers.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace sdcnd_t3p1
 {
@@ -164,7 +164,7 @@ double BehaviourPlanner::collisionCost(const BehaviourPredictor::Prediction& pre
 {
   double cost = 1.;
 
-  if(pred.freeDistance > TrajectoryPlanner::MIN_RESPONSE_TIME * pred.laneSpeed)
+  if(pred.freeDistance > Behaviour::MIN_RESPONSE_TIME * pred.laneSpeed)
   {
     cost = -1.;
   }
@@ -176,9 +176,9 @@ double BehaviourPlanner::collisionCost(const BehaviourPredictor::Prediction& pre
 double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pred)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  const double goodSeparation = 2*TrajectoryPlanner::MIN_RESPONSE_TIME;
+  const double goodSeparation = 2*Behaviour::MIN_RESPONSE_TIME;
   const double separation = pred.freeDistance/pred.laneSpeed;
-  if(separation < TrajectoryPlanner::MIN_RESPONSE_TIME)
+  if(separation < Behaviour::MIN_RESPONSE_TIME)
   {
     return 1.;
   }
@@ -188,7 +188,7 @@ double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pr
   }
   else
   {
-    return 3 - 2*separation/TrajectoryPlanner::MIN_RESPONSE_TIME;
+    return 3 - 2*separation/Behaviour::MIN_RESPONSE_TIME;
   }
 }
 
@@ -196,8 +196,8 @@ double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pr
 double BehaviourPlanner::speedDeviationCost(const BehaviourPredictor::Prediction& pred)
 //---------------------------------------------------------------------------------------------------------------------
 {
-  const double deviation = fabs(SPEED_LIMIT - pred.laneSpeed);
-  return -0.5 + (deviation/SPEED_LIMIT);
+  const double deviation = fabs(Behaviour::MAX_SPEED - pred.laneSpeed);
+  return -0.5 + (deviation/Behaviour::MAX_SPEED);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

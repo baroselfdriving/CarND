@@ -1,8 +1,11 @@
 #ifndef BEHAVIOUR_H
 #define BEHAVIOUR_H
 
+#include "constants.h"
+
 #include <vector>
 #include <map>
+
 namespace sdcnd_t3p1
 {
 
@@ -22,6 +25,9 @@ static const std::map<BehaviourType, std::string> BEHAVIOURTYPE_STRING_MAP = {
 
 struct Behaviour
 {
+  static constexpr double MIN_RESPONSE_TIME = 3; //!< min time to respond to trajectory change
+  static constexpr double MAX_SPEED = .92 * SPEED_LIMIT;
+
   BehaviourType type;
   double targetSpeed;
   int targetLane;

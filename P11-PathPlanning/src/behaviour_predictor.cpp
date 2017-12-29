@@ -1,7 +1,7 @@
 #include "behaviour_predictor.h"
 #include "constants.h"
 #include "helpers.h"
-#include "trajectory_planner.h"
+#include "behaviour.h"
 
 #include <iostream>
 #include <iomanip>
@@ -39,22 +39,23 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       const int theirLane = getLaneNumberFromFrenetD(nearest.behind->frenet.d);
       if(theirLane != myLane)
       {
-        // assumed worst case: we continue at current speed but vehicle behind speeds up by a scale
+        // assumed worst case: we suddenly lose speed but vehicle behind speeds up
         const double dist = distance(me.position, nearest.behind->position);
-        const double scale = 2.;
-        freeDistRear = dist - (scale*nearest.behind->speed - me.speed) * PREDICTION_TIME;
+        const double theirScale = 1.5;
+        const double meScale = 0.5;
+        freeDistRear = dist - (theirScale * nearest.behind->speed - meScale * me.speed) * PREDICTION_TIME;
       }
     }
 
     double freeDistAhead = MAX_TRACK_LENGTH;
-    double laneSpeed = SPEED_LIMIT;
+    double laneSpeed = Behaviour::MAX_SPEED;
     if(nearest.ahead != others.end())
     {
       // assumed worst case: we continue at current speed but vehicle in front reduces speed by 50%
       const double scale = .5;
       freeDistAhead = distance(me.position, nearest.ahead->position)
           - (me.speed - scale*nearest.ahead->speed) * PREDICTION_TIME;
-      laneSpeed = std::min(SPEED_LIMIT, std::max(0., (freeDistAhead-1)/TrajectoryPlanner::MIN_RESPONSE_TIME) );
+      laneSpeed = std::min(Behaviour::MAX_SPEED, std::max(0., (freeDistAhead-1)/Behaviour::MIN_RESPONSE_TIME) );
 
     }
 
@@ -64,12 +65,12 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       prediction.freeDistance = freeDistAhead; // how much free space we've got. Only consider space up ahead.
       prediction.laneSpeed = laneSpeed;
     }
-/*
+
     std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
               << "] v: " << prediction.laneSpeed << std::endl;
-*/
+
   }
-  //std::cout << "=====" << std::endl;
+  std::cout << "=====" << std::endl;
   return pmap;
 }
 

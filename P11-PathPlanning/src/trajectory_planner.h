@@ -16,8 +16,6 @@ namespace sdcnd_t3p1
 class TrajectoryPlanner
 {
 public:
-  static constexpr double MAX_SPEED = .93 * SPEED_LIMIT;
-  static constexpr double MIN_RESPONSE_TIME = 3; //!< min time to respond to trajectory change
 
   struct State
   {

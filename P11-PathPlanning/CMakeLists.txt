@@ -27,6 +27,7 @@ set(sources
   src/trajectory_planner.h
   src/trajectory_planner.cpp
   src/behaviour.h
+  src/behaviour.cpp
   src/behaviour_planner.h
   src/behaviour_planner.cpp
   src/behaviour_predictor.h

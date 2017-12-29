@@ -12,9 +12,6 @@
 namespace sdcnd_t3p1
 {
 
-constexpr double TrajectoryPlanner::MAX_SPEED;
-constexpr double TrajectoryPlanner::MIN_RESPONSE_TIME;
-
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
   : trackWaypoints_(wps), model_(SIM_DELTA_TIME)
@@ -207,19 +204,19 @@ CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehi
 
   // default targets for the trajectory generator
   const double targetD = getFrenetDFromLaneNumber(behaviour.targetLane) ;
-  double targetSpeed = MAX_SPEED;
+  double targetSpeed = Behaviour::MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
   auto vehicles = findNearestVehicles(behaviour.targetLane, me.position, others);
   if( vehicles.ahead != others.end() )
   {
     const double deltaDist = distance(vehicles.ahead->position, me.position);
-    targetSpeed = std::min(MAX_SPEED, std::max(0., (deltaDist-1)/MIN_RESPONSE_TIME) );
+    targetSpeed = std::min(Behaviour::MAX_SPEED, std::max(0., (deltaDist-1)/Behaviour::MIN_RESPONSE_TIME) );
   }
 
   // Add waypoints to trajectory
   //std::cout << "Targets : " << targetSpeed << ", " << targetD << std::endl;
-  updateTrajectory(targetSpeed, targetD, (history_.back().time < 15 ? 15 : MIN_RESPONSE_TIME), nPointsToAdd, path);
+  updateTrajectory(targetSpeed, targetD, (history_.back().time < 15 ? 15 : Behaviour::MIN_RESPONSE_TIME), nPointsToAdd, path);
 
   return path;
 }
