@@ -25,7 +25,7 @@ static const std::map<BehaviourType, std::string> BEHAVIOURTYPE_STRING_MAP = {
 
 struct Behaviour
 {
-  static constexpr double MIN_RESPONSE_TIME = 3; //!< min time to respond to trajectory change
+  static constexpr double MIN_RESPONSE_TIME = 3; //!< min time needed to respond to change in driving conditions
   static constexpr double MAX_SPEED = .92 * SPEED_LIMIT;
 
   BehaviourType type;
