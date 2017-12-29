@@ -176,7 +176,7 @@ double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pr
   }
   else
   {
-    return -1 * (pred.freeDistance/goodSeparation);
+    return 2 - pred.freeDistance/TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
   }
 }
 
