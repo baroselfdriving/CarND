@@ -7,12 +7,14 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <iostream>
+#include <cmath>
 
 namespace sdcnd_t3p1
 {
 
 constexpr double TrajectoryPlanner::MAX_SPEED;
 constexpr double TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE;
+constexpr double TrajectoryPlanner::MIN_RESPONSE_TIME;
 
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
@@ -175,9 +177,6 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
     initial.dj = 0;
     initial.time = 0;
     initial.pose = getCartesianFromFrenet(initial.s, initial.d, trackWaypoints_);
-    //initial.pose.x = me.position.x - cos(me.position.heading);
-    //initial.pose.y = me.position.y - sin(me.position.heading);
-    //initial.pose.heading = me.position.heading;
 
     path.push_back(initial.pose);
     history_.push_back(initial);
@@ -218,15 +217,15 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
     const double deltaDist = distance(vehicles.ahead->position, me.position);
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      targetSpeed = vehicles.ahead->speed;
-      targetTime = (deltaDist - .1 * SAFE_MANOEUVRE_DISTANCE)/targetSpeed;
+      targetSpeed = std::max(.1, vehicles.ahead->speed);
+      targetTime = std::max(MIN_RESPONSE_TIME, deltaDist/targetSpeed);
     }
-    //std::cout << deltaDist << " " << vehicleIt->speed << " " << targetSpeed << std::endl;
   }
 
   double targetD = getFrenetDFromLaneNumber(targetLane) ;
 
   // Add waypoints to trajectory
+  //std::cout << "Targets : " << targetSpeed << ", " << targetTime << std::endl;
   updateTrajectory(targetSpeed, targetD, targetTime, nPointsToAdd, path);
 
   return path;

@@ -6,7 +6,7 @@
 - PID tuning to stay within acceleration, jerk and speed limit
 - dealing wth control instability. use error vector directly instead of cte and ote?
 - consider reducing speed for large heading changes
-
+- comment out all std::cout
 # Behaviours implementation
 
 - Prediction: For all vehicles closer than threshold distance, create predicted trajectories

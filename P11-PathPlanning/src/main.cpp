@@ -148,7 +148,7 @@ int main()
 
           /// ------------ PROJECT IMPLEMENTATION --------------------
           const auto predictions = predictor.predict(car, otherVehicles);
-          auto behaviour = behplanner.compute(predictions, car);
+          const auto behaviour = behplanner.compute(predictions, car);
           const auto path = trajPlanner.computePlan(behaviour.targetLane, car, otherVehicles, previousPath);
           for(const auto& item : path)
           {

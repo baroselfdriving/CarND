@@ -64,6 +64,10 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
        (freeDistAhead > 0) ) // we don't overtake vehicle ahead
     {
       prediction.freeDistance = freeDistAhead; // how much free space we've got. Only consider space up ahead.
+      if(freeDistAhead > TrajectoryPlanner::SAFE_MANOEUVRE_DISTANCE)
+      {
+        laneSpeed = SPEED_LIMIT;
+      }
       prediction.laneSpeed = std::min(laneSpeed, SPEED_LIMIT);
     }
     //std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance

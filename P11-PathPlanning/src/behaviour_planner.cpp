@@ -140,10 +140,10 @@ double BehaviourPlanner::computeCost(const BehaviourPredictor::Prediction& predi
 {
   return
       100 * collisionCost(prediction) +
-      90 * speedDeviationCost(prediction) +
-      80 * manouvrebilityCost(prediction) +
+      80 * speedDeviationCost(prediction) +
+      60 * manouvrebilityCost(prediction) +
       70 * frequentLaneChangeCost(prediction) +
-      60 * separationCost(prediction);
+      90 * separationCost(prediction);
 }
 
 
