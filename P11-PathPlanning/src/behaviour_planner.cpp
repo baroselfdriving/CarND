@@ -28,7 +28,7 @@ void BehaviourPlanner::reset(const Vehicle& me)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-BehaviourTypesList BehaviourPlanner::getSuccessorStates(const Vehicle& me)
+BehaviourTypesList BehaviourPlanner::getSuccessorStates(const BehaviourPredictor::LanePredictionMap& predictions, const Vehicle& me)
 //---------------------------------------------------------------------------------------------------------------------
 {
   BehaviourTypesList list;
@@ -39,8 +39,14 @@ BehaviourTypesList BehaviourPlanner::getSuccessorStates(const Vehicle& me)
   case BehaviourType::LANE_FOLLOW:
   {
     list.push_back(BehaviourType::LANE_FOLLOW);
-    list.push_back(BehaviourType::LANE_CHANGE_LEFT);
-    list.push_back(BehaviourType::LANE_CHANGE_RIGHT);
+    if( predictions.at(std::max(0,myLane-1)).freeDistance > 0)
+    {
+      list.push_back(BehaviourType::LANE_CHANGE_LEFT);
+    }
+    if( predictions.at(std::min(2,myLane+1)).freeDistance > 0)
+    {
+      list.push_back(BehaviourType::LANE_CHANGE_RIGHT);
+    }
     break;
   }
   case BehaviourType::LANE_CHANGE_LEFT:
@@ -71,7 +77,7 @@ Behaviour BehaviourPlanner::compute(const BehaviourPredictor::LanePredictionMap&
     current_.targetLane = 1;
     return current_; // something terrible happened, such as car off the road
   }
-  const auto successorStates = getSuccessorStates(me);
+  const auto successorStates = getSuccessorStates(predictions, me);
   for(const auto& availableState : successorStates)
   {
     switch(availableState)
@@ -139,11 +145,11 @@ double BehaviourPlanner::computeCost(const BehaviourPredictor::Prediction& predi
 //---------------------------------------------------------------------------------------------------------------------
 {
   return
-      100 * collisionCost(prediction) +
-      80 * speedDeviationCost(prediction) +
-      60 * manouvrebilityCost(prediction) +
-      70 * frequentLaneChangeCost(prediction) +
-      90 * separationCost(prediction);
+      200 * collisionCost(prediction) +
+      90 * speedDeviationCost(prediction) +
+      10 * manouvrebilityCost(prediction) +
+      50 * frequentLaneChangeCost(prediction) +
+      100 * separationCost(prediction);
 }
 
 

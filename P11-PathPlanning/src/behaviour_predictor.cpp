@@ -70,11 +70,11 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       }
       prediction.laneSpeed = std::min(laneSpeed, SPEED_LIMIT);
     }
-    //std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
-    //          << "] v: " << prediction.laneSpeed << std::endl;
+    std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
+              << "] v: " << prediction.laneSpeed << std::endl;
   }
 
-  //std::cout << "=====" << std::endl;
+  std::cout << "=====" << std::endl;
   return pmap;
 }
 
