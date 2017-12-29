@@ -76,7 +76,7 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
               */
   }
 
-  std::cout << "=====" << std::endl;
+  //std::cout << "=====" << std::endl;
   return pmap;
 }
 
