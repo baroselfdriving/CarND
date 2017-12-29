@@ -217,7 +217,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
     const double deltaDist = distance(vehicles.ahead->position, me.position);
     if(deltaDist < SAFE_MANOEUVRE_DISTANCE)
     {
-      targetSpeed = std::max(.1, vehicles.ahead->speed);
+      targetSpeed = std::max(.1, .8 * vehicles.ahead->speed);
       targetTime = std::max(MIN_RESPONSE_TIME, deltaDist/targetSpeed);
     }
   }

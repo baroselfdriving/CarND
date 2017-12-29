@@ -17,8 +17,8 @@ class TrajectoryPlanner
 {
 public:
   static constexpr double MAX_SPEED = .90 * SPEED_LIMIT;
-  static constexpr double SAFE_MANOEUVRE_DISTANCE = 90; //!< how much space do we want for a maneouvre
-  static constexpr double MIN_RESPONSE_TIME = 1; //!< min time to respond to trajectory change
+  static constexpr double SAFE_MANOEUVRE_DISTANCE = 60; //!< how much space do we want for a maneouvre
+  static constexpr double MIN_RESPONSE_TIME = 2; //!< min time to respond to trajectory change
 
   struct State
   {

@@ -147,8 +147,8 @@ double BehaviourPlanner::computeCost(const BehaviourPredictor::Prediction& predi
   return
       200 * collisionCost(prediction) +
       90 * speedDeviationCost(prediction) +
-      10 * manouvrebilityCost(prediction) +
-      50 * frequentLaneChangeCost(prediction) +
+      50 * manouvrebilityCost(prediction) +
+      70 * frequentLaneChangeCost(prediction) +
       100 * separationCost(prediction);
 }
 
@@ -212,19 +212,21 @@ double BehaviourPlanner::manouvrebilityCost(const BehaviourPredictor::Prediction
 double BehaviourPlanner::frequentLaneChangeCost(const BehaviourPredictor::Prediction& pred)
 //---------------------------------------------------------------------------------------------------------------------
 {
+  double cost = 0;
   const double minDuration = 100;
   if( current_.duration < minDuration)
   {
-    return 1;
+    cost = 1;
   }
   else if( current_.duration > 2*minDuration)
   {
-    return -1;
+    cost = -1;
   }
   else
   {
-    return 1 - current_.duration/minDuration;
+    cost = 3 - 2*current_.duration/minDuration;
   }
+  return cost;
 }
 
 }
