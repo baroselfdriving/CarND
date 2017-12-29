@@ -219,7 +219,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(int targetLane, const Vehicle& 
 
   // Add waypoints to trajectory
   //std::cout << "Targets : " << targetSpeed << ", " << targetD << std::endl;
-  updateTrajectory(targetSpeed, targetD, (history_.back().time < 10 ? 10 : MIN_RESPONSE_TIME), nPointsToAdd, path);
+  updateTrajectory(targetSpeed, targetD, (history_.back().time < 15 ? 15 : MIN_RESPONSE_TIME), nPointsToAdd, path);
 
   return path;
 }

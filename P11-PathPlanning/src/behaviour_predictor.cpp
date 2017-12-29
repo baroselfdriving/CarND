@@ -39,9 +39,9 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       const int theirLane = getLaneNumberFromFrenetD(nearest.behind->frenet.d);
       if(theirLane != myLane)
       {
-        // assumed worst case: we continue at current speed but vehicle behind speeds up by 50%
+        // assumed worst case: we continue at current speed but vehicle behind speeds up by a scale
         const double dist = distance(me.position, nearest.behind->position);
-        const double scale = 1.5;
+        const double scale = 2.;
         freeDistRear = dist - (scale*nearest.behind->speed - me.speed) * PREDICTION_TIME;
       }
     }
