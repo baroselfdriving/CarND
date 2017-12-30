@@ -150,11 +150,11 @@ double BehaviourPlanner::computeCost(const BehaviourPredictor::Prediction& predi
 //---------------------------------------------------------------------------------------------------------------------
 {
   return
-      200 * collisionCost(prediction) +
+      100 * collisionCost(prediction) +
       90 * speedDeviationCost(prediction) +
       50 * manouvrebilityCost(prediction) +
       80 * frequentLaneChangeCost(prediction) +
-      100 * separationCost(prediction);
+      200 * separationCost(prediction);
 }
 
 
@@ -169,6 +169,7 @@ double BehaviourPlanner::collisionCost(const BehaviourPredictor::Prediction& pre
     cost = -1.;
   }
 
+  std::cout << "[C(col) : " << cost << "] ";
   return cost;
 }
 
@@ -178,18 +179,21 @@ double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pr
 {
   const double goodSeparation = 2*Behaviour::MIN_RESPONSE_TIME;
   const double separation = pred.freeDistance/pred.laneSpeed;
+  double cost = 1;
   if(separation < Behaviour::MIN_RESPONSE_TIME)
   {
-    return 1.;
+    cost = 1.;
   }
   else if(separation > goodSeparation)
   {
-    return -1.;
+    cost = -1.;
   }
   else
   {
-    return 3 - 2*separation/Behaviour::MIN_RESPONSE_TIME;
+    cost = 3 - 2*separation/Behaviour::MIN_RESPONSE_TIME;
   }
+  std::cout << "[C(sep) : " << cost << "]" << std::endl;
+  return cost;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -197,21 +201,26 @@ double BehaviourPlanner::speedDeviationCost(const BehaviourPredictor::Prediction
 //---------------------------------------------------------------------------------------------------------------------
 {
   const double deviation = fabs(Behaviour::MAX_SPEED - pred.laneSpeed);
-  return -0.5 + (deviation/Behaviour::MAX_SPEED);
+  const double cost = -0.5 + (deviation/Behaviour::MAX_SPEED);
+  std::cout << "[C(speed) : " << cost << "] ";
+  return cost;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 double BehaviourPlanner::manouvrebilityCost(const BehaviourPredictor::Prediction& pred)
 //---------------------------------------------------------------------------------------------------------------------
 {
+  double cost = 1;
   if(pred.laneNumber == 1)
   {
-    return -1;
+    cost = -1;
   }
   else
   {
-    return 0.5;
+    cost = 0.5;
   }
+  std::cout << "[C(man) : " << cost << "] ";
+  return cost;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -225,12 +234,14 @@ double BehaviourPlanner::frequentLaneChangeCost(const BehaviourPredictor::Predic
   }
   else if( current_.duration > 2*MIN_LANE_KEEP_TIMESTEPS)
   {
-    cost = -1;
+    cost = 0;
   }
   else
   {
-    cost = 3 - 2*current_.duration/MIN_LANE_KEEP_TIMESTEPS;
+    cost = 2 - current_.duration/MIN_LANE_KEEP_TIMESTEPS;
   }
+  std::cout << "[C(changes) : " << cost << "] ";
+
   return cost;
 }
 

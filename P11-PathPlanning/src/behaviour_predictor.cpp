@@ -1,15 +1,13 @@
 #include "behaviour_predictor.h"
 #include "constants.h"
 #include "helpers.h"
-#include "behaviour.h"
 
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 namespace sdcnd_t3p1
 {
-
-constexpr double BehaviourPredictor::PREDICTION_TIME;
 
 //---------------------------------------------------------------------------------------------------------------------
 BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle& me, const VehicleList& others)
@@ -26,10 +24,10 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
   {
     auto& prediction = pmap.at(lane);
     prediction.laneNumber = lane;
-    prediction.laneSpeed = me.speed;
+    prediction.laneSpeed = ((lane == myLane) ? me.speed : 0);
     prediction.freeDistance = 0;
 
-    NearestVehicles nearest = findNearestVehicles(lane, me.position, others);
+    NearestVehicles nearest = findClosestVehiclesInLane(lane, me, others);
     double freeDistRear = MAX_TRACK_LENGTH;
     if(nearest.behind != others.end())
     {
@@ -40,10 +38,11 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       if(theirLane != myLane)
       {
         // assumed worst case: we suddenly lose speed but vehicle behind speeds up
-        const double dist = distance(me.position, nearest.behind->position);
-        const double theirScale = 1.5;
-        const double meScale = 0.5;
-        freeDistRear = dist - (theirScale * nearest.behind->speed - meScale * me.speed) * PREDICTION_TIME;
+        const double dist = getDistanceAlongTrack(me.frenet.s, nearest.behind->frenet.s);
+        assert(dist > 0);
+        const double theirScale = 1.2;
+        const double meScale = .8;
+        freeDistRear = dist - (theirScale * nearest.behind->speed - meScale * me.speed) * Behaviour::PREDICTION_TIME;
       }
     }
 
@@ -51,12 +50,13 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
     double laneSpeed = Behaviour::MAX_SPEED;
     if(nearest.ahead != others.end())
     {
-      // assumed worst case: we continue at current speed but vehicle in front reduces speed by 50%
-      const double scale = .5;
-      freeDistAhead = distance(me.position, nearest.ahead->position)
-          - (me.speed - scale*nearest.ahead->speed) * PREDICTION_TIME;
+      // assumed worst case: we continue at current speed but vehicle in front reduces speed by scale
+      const double theirScale = 0.5;
+      const double meScale = 1.;
+      const double dist = getDistanceAlongTrack(nearest.ahead->frenet.s, me.frenet.s);
+      assert(dist > 0);
+      freeDistAhead = dist - (meScale * me.speed - theirScale * nearest.ahead->speed) * Behaviour::PREDICTION_TIME;
       laneSpeed = std::min(Behaviour::MAX_SPEED, std::max(0., (freeDistAhead-1)/Behaviour::MIN_RESPONSE_TIME) );
-
     }
 
     if((freeDistRear > 0) && // vehicle behind does not overtake us
@@ -66,7 +66,7 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       prediction.laneSpeed = laneSpeed;
     }
 
-    std::cout << std::fixed << std::setprecision(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
+    std::cout << std::fixed << std::setprecision(1) << std::setw(6) << "l: [" << prediction.laneNumber << "] d: [" << prediction.freeDistance
               << "] v: " << prediction.laneSpeed << std::endl;
 
   }

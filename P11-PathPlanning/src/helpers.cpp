@@ -208,8 +208,11 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
     {
       splinePoints[iNextWp] = transformToLocal(input[(iOriginWp+iNextWp)%numInputs].point, segmentOrigin);
     }
+
     tk::spline splinator;
+    //splinator.set_boundary(tk::spline::first_deriv, 0, tk::spline::first_deriv, 0, true);
     splinator.set_points(splinePoints);
+
     const double dx = (splinePoints[1].x - splinePoints[0].x)/n;
     for(unsigned int i = 1; i <= n; ++i)
     {
@@ -246,15 +249,34 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-NearestVehicles findNearestVehicles(int lane, const CartesianPose& me, const VehicleList& vehicles)
+double getDistanceAlongTrack(double me, double other)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  double d = me - other;
+  const double halfTrackLength = MAX_TRACK_LENGTH/2.;
+  if( d < -halfTrackLength )
+  {
+    d += MAX_TRACK_LENGTH;
+  }
+
+  if(d > halfTrackLength)
+  {
+    d -= MAX_TRACK_LENGTH;
+  }
+  return d;
+}
+
+
+//---------------------------------------------------------------------------------------------------------------------
+NearestVehicles findClosestVehiclesInLane(int lane, const Vehicle& me, const VehicleList& vehicles)
 //---------------------------------------------------------------------------------------------------------------------
 {
   NearestVehicles nearestVehicles;
   nearestVehicles.ahead = vehicles.end();
   nearestVehicles.behind = vehicles.end();
 
-  double nearestAhead = std::numeric_limits<double>::max();
-  double nearestBehind = std::numeric_limits<double>::max();
+  double nearestAhead = -(MAX_TRACK_LENGTH + 1);
+  double nearestBehind = MAX_TRACK_LENGTH + 1;
 
   for(VehicleList::const_iterator other = vehicles.begin(); other != vehicles.end(); ++other)
   {
@@ -264,6 +286,29 @@ NearestVehicles findNearestVehicles(int lane, const CartesianPose& me, const Veh
       continue;
     }
 
+    const double dist = getDistanceAlongTrack(me.frenet.s, other->frenet.s);
+
+    // vehicle is behind
+    if(dist > 0)
+    {
+      if(dist < nearestBehind)
+      {
+        nearestBehind = dist;
+        nearestVehicles.behind = other;
+      }
+    }
+
+    // vehicle is ahead
+    else
+    {
+      if( dist > nearestAhead )
+      {
+        nearestAhead = dist;
+        nearestVehicles.ahead = other;
+      }
+
+    }
+/*
     /// \note: using Frenet coordinates here would have resulted in simpler math except at the track boundary
 
     // compute X-coordinate (car longitudinal axis) of the other vehicle. If > 0, it is ahead, else behind
@@ -291,7 +336,7 @@ NearestVehicles findNearestVehicles(int lane, const CartesianPose& me, const Veh
         nearestVehicles.ahead = other;
       }
     }
-
+*/
   }
   return nearestVehicles;
 }

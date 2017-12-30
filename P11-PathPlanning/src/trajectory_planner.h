@@ -44,6 +44,9 @@ public:
   CartesianPoseList computePlan(Behaviour behaviour, const Vehicle& me, const VehicleList& others,
                                 const CartesianPoseList& myPrevPath);
 
+  /// History of previous car states
+  const StateList& getHistory() const { return history_; }
+
 private:
   struct PolynomialConstraint
   {
@@ -59,8 +62,7 @@ private:
 
   /// Given forward speed, lateral position along the path, and a time slice, generate nPointsToAdd
   /// set of waypoints
-  void updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd,
-                        CartesianPoseList& coords);
+  void updateTrajectory(double longSpeed, double latPos, size_t nPointsToAdd, CartesianPoseList& coords);
 
 private:
   const WaypointList& trackWaypoints_;

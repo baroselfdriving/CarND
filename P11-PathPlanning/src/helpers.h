@@ -57,8 +57,11 @@ struct NearestVehicles
   VehicleList::const_iterator behind;
 };
 
+/// Get distance between two points given frenet path length
+double getDistanceAlongTrack(double me, double other);
+
 /// Find nearest vehicle ahead of me in the specified lane. If no vehicle, then return vehicles.end()
-NearestVehicles findNearestVehicles(int lane, const CartesianPose& me, const VehicleList& vehicles);
+NearestVehicles findClosestVehiclesInLane(int lane, const Vehicle& me, const VehicleList& vehicles);
 
 }
 

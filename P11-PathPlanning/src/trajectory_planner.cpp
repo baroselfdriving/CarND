@@ -62,8 +62,7 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double timeDelta, size_t nPointsToAdd,
-                                         CartesianPoseList& coords)
+void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t nPointsToAdd, CartesianPoseList& coords)
 //---------------------------------------------------------------------------------------------------------------------
 {
   Integrator integrator(SIM_DELTA_TIME);
@@ -89,13 +88,15 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, double
   sFinal.q = longSpeed;
   sFinal.qDot = 0;
   sFinal.qDotDot = 0;
-  sFinal.t = sInitial.t + timeDelta;
+  sFinal.t = sInitial.t + ((firstPointIt.time < Behaviour::INITIAL_SPEED_UP_TIME) ? //!< if starting up after a stop, ramp up slowly
+                             Behaviour::INITIAL_SPEED_UP_TIME :
+                             Behaviour::MIN_RESPONSE_TIME);
 
   PolynomialConstraint dFinal;
   dFinal.q = latPos;
   dFinal.qDot = 0;
   dFinal.qDotDot = 0;
-  dFinal.t = dInitial.t + timeDelta;
+  dFinal.t = dInitial.t + Behaviour::LANE_CHANGE_DURATION;
 
   // Fit polynomial between end points
   const std::array<double, 6> sCoeffs = computePolynomialCoefficients(sInitial, sFinal);
@@ -207,16 +208,16 @@ CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehi
   double targetSpeed = Behaviour::MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions
-  auto vehicles = findNearestVehicles(behaviour.targetLane, me.position, others);
+  auto vehicles = findClosestVehiclesInLane(behaviour.targetLane, me, others);
   if( vehicles.ahead != others.end() )
   {
-    const double deltaDist = distance(vehicles.ahead->position, me.position);
+    const double deltaDist = getDistanceAlongTrack(vehicles.ahead->frenet.s, me.frenet.s);
     targetSpeed = std::min(Behaviour::MAX_SPEED, std::max(0., (deltaDist-1)/Behaviour::MIN_RESPONSE_TIME) );
   }
 
-  // Add waypoints to trajectory
+  // Add waypoints to trajectory.
   //std::cout << "Targets : " << targetSpeed << ", " << targetD << std::endl;
-  updateTrajectory(targetSpeed, targetD, (history_.back().time < 15 ? 15 : Behaviour::MIN_RESPONSE_TIME), nPointsToAdd, path);
+  updateTrajectory(targetSpeed, targetD, nPointsToAdd, path);
 
   return path;
 }

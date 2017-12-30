@@ -1,8 +1,8 @@
 # TODO
 
+- vehicle starts from zero turned backwards
 - deal with vehicle barging in to our path on short notice
 - avoiding collisions when changing lane
-- comment out all std::cout
 
 # Behaviours implementation
 
@@ -19,7 +19,8 @@
 - vehicle model used and control inputs
 - Error formulation and PID control for speed and steering - mainly for containing lateral accelerations. Gains are
   tuned for gentle control changes.
-- prediction logic - constant velocity constant lane
+- prediction logic - constant velocity constant lane. highly conservative, but still not perfect. Low speed
+  collisions are possible
 - using min_response_time as the criterion for speed control and lane changes (based on safe driving heuristics)
 - behaviours cost functions and weights
 - Brief description of classes and functionality

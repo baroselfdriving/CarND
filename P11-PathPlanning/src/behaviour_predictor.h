@@ -2,6 +2,7 @@
 #define BEHAVIOUR_PREDICTOR_H
 
 #include "vehicle.h"
+#include "behaviour.h"
 #include <map>
 
 namespace sdcnd_t3p1
@@ -9,9 +10,6 @@ namespace sdcnd_t3p1
 
 class BehaviourPredictor
 {
-public:
-  static constexpr double PREDICTION_TIME = 5;
-
 public:
   struct Prediction
   {
