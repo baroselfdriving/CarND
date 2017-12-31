@@ -308,35 +308,6 @@ NearestVehicles findClosestVehiclesInLane(int lane, const Vehicle& me, const Veh
       }
 
     }
-/*
-    /// \note: using Frenet coordinates here would have resulted in simpler math except at the track boundary
-
-    // compute X-coordinate (car longitudinal axis) of the other vehicle. If > 0, it is ahead, else behind
-    const double ca = cos(me.heading);
-    const double sa = sin(me.heading);
-    const double x = ca * (other->position.x - me.x) + sa * (other->position.y - me.y);
-
-    // vehicle is behind
-    const double dist = distance(me, other->position);
-    if( x < 0 )
-    {
-      if(dist < nearestBehind)
-      {
-        nearestBehind = dist;
-        nearestVehicles.behind = other;
-      }
-    }
-
-    // vehicle is ahead
-    else
-    {
-      if( dist < nearestAhead )
-      {
-        nearestAhead = dist;
-        nearestVehicles.ahead = other;
-      }
-    }
-*/
   }
   return nearestVehicles;
 }

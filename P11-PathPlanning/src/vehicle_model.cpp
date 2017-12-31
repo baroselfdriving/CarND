@@ -68,6 +68,7 @@ CartesianPose VehicleModel::move()
   pose_.y += speed_ * sin(pose_.heading) * dt_;
   pose_.heading += (speed_/Lf) * steeringAngle_ * dt_;
 
+  //std::cout << pose_.x << " " << pose_.y << " " << pose_.heading * 180/M_PI << std::endl;
   return pose_;
 }
 
