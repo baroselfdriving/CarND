@@ -50,9 +50,7 @@ int main()
     return -1;
   }
 
-  // beef up the number of waypoints and make it smooth
-  sdcnd_t3p1::WaypointList fineWaypoints = sdcnd_t3p1::generateFinerWaypoints(trackWaypoints, 10);
-  sdcnd_t3p1::TrajectoryPlanner trajPlanner(fineWaypoints);
+  sdcnd_t3p1::TrajectoryPlanner trajPlanner(trackWaypoints);
   sdcnd_t3p1::BehaviourPredictor predictor;
   sdcnd_t3p1::BehaviourPlanner behplanner;
 
@@ -159,7 +157,7 @@ int main()
           }
           const auto predictions = predictor.predict(car, otherVehicles);
           const auto behaviour = behplanner.compute(predictions, car);
-          const auto path = trajPlanner.computePlan(behaviour, car, otherVehicles, previousPath);
+          const auto path = trajPlanner.computePlan(behaviour, car, otherVehicles, previousPath, prevPathEnd);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );

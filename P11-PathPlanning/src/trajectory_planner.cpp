@@ -14,7 +14,7 @@ namespace sdcnd_t3p1
 
 //---------------------------------------------------------------------------------------------------------------------
 TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
-  : trackWaypoints_(wps), model_(SIM_DELTA_TIME)
+  : trackWaypoints_(wps), localWaypointsMaxS(-1), localWaypointsMinS(-1), model_(SIM_DELTA_TIME)
 //---------------------------------------------------------------------------------------------------------------------
 {
 }
@@ -72,6 +72,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t
   const auto& firstPointIt = history_.back();
   double s0 = firstPointIt.s;
   double t0 = firstPointIt.time;
+
   sInitial.q = firstPointIt.sv;
   sInitial.qDot = firstPointIt.sa;
   sInitial.qDotDot = firstPointIt.sj;
@@ -136,8 +137,10 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t
       integrator.reset(fs.s, fs.sv);
     }
 
+    //std::cout << fs.s << " " << fs.d << std::endl;
+
     // reference trajectory coordinates
-    const CartesianPose refPose = getCartesianFromFrenet(fs.s, fs.d, trackWaypoints_);
+    const CartesianPose refPose = getCartesianFromFrenet(fs.s, fs.d, localTrackWaypoints_);
 
     // push into control and get updated vehicle position
     fs.pose = model_.predict(refPose, fs.sv);
@@ -149,10 +152,64 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehicle& me,
-                                                 const VehicleList& others, const CartesianPoseList& myPrevPath)
+void TrajectoryPlanner::initialiaseLocalWaypoints(double s)
 //---------------------------------------------------------------------------------------------------------------------
 {
+  WaypointList anchors(4);
+  anchors[0] = generateWaypoint(s, trackWaypoints_);
+  anchors[1] = generateWaypoint(s + 25, trackWaypoints_);
+  anchors[2] = generateWaypoint(s + 50, trackWaypoints_);
+  anchors[3] = generateWaypoint(s + 100, trackWaypoints_);
+  localTrackWaypoints_ = generateLocalWaypoints(anchors, 100);
+  localWaypointsMinS = localTrackWaypoints_.front().frenet.s;
+  localWaypointsMaxS = localTrackWaypoints_.back().frenet.s;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void TrajectoryPlanner::updateLocalWaypoints(double sMin, double sMax)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  const double spacing = 25;
+  const double deltaS = getDistanceAlongTrack(sMax, sMin);
+  const unsigned int nPoints = std::max(10u,static_cast<unsigned int>(fabs(deltaS)));
+  const unsigned int nAnchors = std::max(3u, static_cast<unsigned int>(fabs(deltaS)/spacing));
+  WaypointList anchors(nAnchors);
+  for(unsigned int i = 0; i < nAnchors; ++i)
+  {
+    double s = sMin + spacing*i;
+    if((s < localWaypointsMaxS) && (s > localWaypointsMinS))
+    {
+      anchors[i] = generateWaypoint(s, localTrackWaypoints_);
+    }
+    else
+    {
+      anchors[i] = generateWaypoint(s, trackWaypoints_);
+    }
+  }
+  localTrackWaypoints_ = generateLocalWaypoints(anchors, nPoints);
+  localWaypointsMinS = localTrackWaypoints_.front().frenet.s;
+  localWaypointsMaxS = localTrackWaypoints_.back().frenet.s;
+
+  std::cout << sMin << " " << sMax << " " << deltaS << " " << localWaypointsMaxS << " " << nPoints << std::endl;
+
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehicle& me,
+                                                 const VehicleList& others, const CartesianPoseList& myPrevPath,
+                                                 const FrenetPoint& myPrevPathEnd)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  // create a locally smooth trajectory to follow
+  if(localTrackWaypoints_.size() == 0)
+  {
+    initialiaseLocalWaypoints(me.frenet.s);
+  }
+  else
+  {
+    updateLocalWaypoints(myPrevPathEnd.s - 10, myPrevPathEnd.s + Behaviour::MAX_SPEED * Behaviour::MIN_RESPONSE_TIME);
+  }
+
   const size_t myPrevPathSz = myPrevPath.size();
   size_t nPointsToAdd = SIM_NUM_WAYPOINTS - myPrevPathSz;
   CartesianPoseList path = myPrevPath;
@@ -173,7 +230,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehi
     initial.da = 0;
     initial.dj = 0;
     initial.time = 0;
-    initial.pose = getCartesianFromFrenet(initial.s, initial.d, trackWaypoints_);
+    initial.pose = getCartesianFromFrenet(initial.s, initial.d, localTrackWaypoints_);
 
     path.push_back(initial.pose);
     history_.push_back(initial);
@@ -204,7 +261,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehi
   }
 
   // default targets for the trajectory generator
-  const double targetD = getFrenetDFromLaneNumber(behaviour.targetLane) ;
+  const double targetD = getFrenetDFromLaneNumber(behaviour.targetLane);
   double targetSpeed = Behaviour::MAX_SPEED;
 
   // if behind and close to another vehicle, set safe final boundary conditions

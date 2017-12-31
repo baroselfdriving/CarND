@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <iostream>
+#include <iomanip>
 
 namespace sdcnd_t3p1
 {
@@ -180,6 +181,79 @@ CartesianPose transformToGlobal(const CartesianPose& point, const CartesianPose&
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+Waypoint generateWaypoint(double s, const WaypointList& wps)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  Waypoint wp;
+  wp.point = getCartesianFromFrenet(s,0,wps);
+  wp.frenet.s = s;
+  wp.frenet.d = 0;
+  wp.frenet.dx = cos(wp.point.heading-M_PI/2.);
+  wp.frenet.dy = sin(wp.point.heading-M_PI/2.);
+  return wp;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+WaypointList generateLocalWaypoints(const WaypointList& points, unsigned int n)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  if(n < 1)
+  {
+    return points;
+  }
+
+  const CartesianPose segmentOrigin = points[0].point;
+  const size_t nAnchors = points.size();
+  CartesianPoseList splinePoints(nAnchors);
+
+  // Convert to local coordinates
+  for(size_t i = 0; i < nAnchors; ++i)
+  {
+    splinePoints[i] = transformToLocal(points[i].point, segmentOrigin);
+  }
+
+  // fit spline
+  tk::spline splinator;
+  //splinator.set_boundary(tk::spline::first_deriv, 0, tk::spline::first_deriv, 0, true);
+  splinator.set_points(splinePoints);
+
+  // Generate intermediate points and convert to global coords
+  const double dx = (splinePoints[nAnchors-1].x - splinePoints[0].x)/n;
+  WaypointList finePoints(n);
+  for(unsigned int i = 0; i < n; ++i)
+  {
+    if(i == 0)
+    {
+      finePoints[0] = points[0];
+    }
+    else
+    {
+      const auto& prevWp = finePoints.at(i-1);
+      Waypoint wp;
+      wp.point.x = dx*i;
+      wp.point.y = splinator(wp.point.x);
+      wp.point.heading = 0;
+      wp.point = transformToGlobal(wp.point, segmentOrigin);
+      wp.point.heading = atan2((wp.point.y - prevWp.point.y),(wp.point.x - prevWp.point.x));
+      wp.frenet.s = prevWp.frenet.s + distance(prevWp.point, wp.point); /// \todo deal with track boundary
+      wp.frenet.d = 0;
+      wp.frenet.dx = cos(wp.point.heading-M_PI/2.);
+      wp.frenet.dy = sin(wp.point.heading-M_PI/2.);
+      finePoints[i] = wp;
+    }
+  }
+/*
+  std::cout << std::setprecision(8);
+  for(const auto& wp : finePoints)
+  {
+    std::cout << wp.point.x << ", " << wp.point.y << ", " << wp.frenet.s << ", "
+              << wp.frenet.dx << ", " << wp.frenet.dy << std::endl;
+  }
+*/
+  return finePoints;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
 //---------------------------------------------------------------------------------------------------------------------
 {
@@ -199,7 +273,7 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
   /// - goto * (do this until the second last point. At this point, we will have completed the loop)
 
   size_t numInputs = input.size();
-  for(size_t iOriginWp = 0; iOriginWp < numInputs-1; ++iOriginWp)
+  for(size_t iOriginWp = 0; iOriginWp < numInputs - 1; ++iOriginWp)
   {
     const CartesianPose segmentOrigin = input[iOriginWp].point;
     const unsigned int nSplineAnchors = 3;
@@ -237,14 +311,13 @@ WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
       }
     }
   }
-
-  /*
+/*
   for(const auto& wp : finePoints)
   {
     std::cout << wp.point.x << ", " << wp.point.y << ", " << wp.frenet.s << ", "
               << wp.frenet.dx << ", " << wp.frenet.dy << std::endl;
   }
-  */
+*/
   return finePoints;
 }
 

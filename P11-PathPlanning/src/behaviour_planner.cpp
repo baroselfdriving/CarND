@@ -134,11 +134,12 @@ Behaviour BehaviourPlanner::compute(const BehaviourPredictor::LanePredictionMap&
   behaviour.duration = ((bestBehaviourType == current_.type) ? current_.duration : 0);
   behaviour.targetLane = predictionForBehaviour[bestBehaviourType].laneNumber;
   behaviour.targetSpeed = predictionForBehaviour[bestBehaviourType].laneSpeed;
-
+/*
   if(current_.type != behaviour.type)
   {
     std::cout << BEHAVIOURTYPE_STRING_MAP.at(behaviour.type) << " : " << behaviour.targetLane << std::endl;
   }
+  */
   current_ = behaviour;
 
   return current_;
@@ -169,7 +170,7 @@ double BehaviourPlanner::collisionCost(const BehaviourPredictor::Prediction& pre
     cost = -1.;
   }
 
-  std::cout << "[C(col) : " << cost << "] ";
+  //std::cout << "[C(col) : " << cost << "] ";
   return cost;
 }
 
@@ -192,7 +193,7 @@ double BehaviourPlanner::separationCost(const BehaviourPredictor::Prediction& pr
   {
     cost = 3 - 2*separation/Behaviour::MIN_RESPONSE_TIME;
   }
-  std::cout << "[C(sep) : " << cost << "]" << std::endl;
+  //std::cout << "[C(sep) : " << cost << "]" << std::endl;
   return cost;
 }
 
@@ -202,7 +203,7 @@ double BehaviourPlanner::speedDeviationCost(const BehaviourPredictor::Prediction
 {
   const double deviation = fabs(Behaviour::MAX_SPEED - pred.laneSpeed);
   const double cost = -0.5 + (deviation/Behaviour::MAX_SPEED);
-  std::cout << "[C(speed) : " << cost << "] ";
+  //std::cout << "[C(speed) : " << cost << "] ";
   return cost;
 }
 
@@ -219,7 +220,7 @@ double BehaviourPlanner::manouvrebilityCost(const BehaviourPredictor::Prediction
   {
     cost = 0.5;
   }
-  std::cout << "[C(man) : " << cost << "] ";
+  //std::cout << "[C(man) : " << cost << "] ";
   return cost;
 }
 
@@ -240,7 +241,7 @@ double BehaviourPlanner::frequentLaneChangeCost(const BehaviourPredictor::Predic
   {
     cost = 2 - current_.duration/MIN_LANE_KEEP_TIMESTEPS;
   }
-  std::cout << "[C(changes) : " << cost << "] ";
+  //std::cout << "[C(changes) : " << cost << "] ";
 
   return cost;
 }

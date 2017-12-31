@@ -42,7 +42,7 @@ public:
 
   /// Call every cycle to generate a list of waypoints for the car to follow
   CartesianPoseList computePlan(Behaviour behaviour, const Vehicle& me, const VehicleList& others,
-                                const CartesianPoseList& myPrevPath);
+                                const CartesianPoseList& myPrevPath, const FrenetPoint& myPrevPathEnd);
 
   /// History of previous car states
   const StateList& getHistory() const { return history_; }
@@ -64,8 +64,16 @@ private:
   /// set of waypoints
   void updateTrajectory(double longSpeed, double latPos, size_t nPointsToAdd, CartesianPoseList& coords);
 
+  void initialiaseLocalWaypoints(double s);
+
+  void updateLocalWaypoints(double sMin, double sMax);
+
 private:
   const WaypointList& trackWaypoints_;
+  WaypointList localTrackWaypoints_;
+  double localWaypointsMaxS;
+  double localWaypointsMinS;
+
   StateList history_;
   VehicleModel model_;
 };
