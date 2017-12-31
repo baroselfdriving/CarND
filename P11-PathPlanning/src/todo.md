@@ -1,13 +1,10 @@
 # TODO
 
 - vehicle starts from zero turned backwards
-- deal with vehicle barging in to our path on short notice
+- deal with vehicle barging in to our path on short notice. Clear history and path and start again
 - avoiding collisions when changing lane
-
-# Behaviours implementation
-
-- Prediction: For all vehicles closer than threshold distance, create predicted trajectories
-- cost functions: collisions, safe distance, deviation from target speed, lane change cost
+- 'out of lane' when on the outside lane
+- 'max acceleration' when on the outside lane
 
 # Report points
 
