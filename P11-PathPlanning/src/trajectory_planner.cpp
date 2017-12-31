@@ -19,7 +19,6 @@ TrajectoryPlanner::TrajectoryPlanner(const WaypointList& wps)
 {
 }
 
-
 //---------------------------------------------------------------------------------------------------------------------
 std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const PolynomialConstraint& initial, const PolynomialConstraint& final)
 //---------------------------------------------------------------------------------------------------------------------
@@ -59,6 +58,49 @@ std::array<double, 6> TrajectoryPlanner::computePolynomialCoefficients(const Pol
     std::cerr << "WARNING: Trajectory not solvable for given constraints" << std::endl;
   }
   return coeffs;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void TrajectoryPlanner::initialiaseLocalWaypoints(double s)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  WaypointList anchors(4);
+  anchors[0] = generateWaypoint(s, trackWaypoints_);
+  anchors[1] = generateWaypoint(s + 25, trackWaypoints_);
+  anchors[2] = generateWaypoint(s + 50, trackWaypoints_);
+  anchors[3] = generateWaypoint(s + 100, trackWaypoints_);
+  localTrackWaypoints_ = generateLocalWaypoints(anchors, 100);
+  localWaypointsMinS = localTrackWaypoints_.front().frenet.s;
+  localWaypointsMaxS = localTrackWaypoints_.back().frenet.s;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void TrajectoryPlanner::updateLocalWaypoints(double sMin, double sMax)
+//---------------------------------------------------------------------------------------------------------------------
+{
+  const double spacing = 25;
+  const double deltaS = getDistanceAlongTrack(sMax, sMin);
+  const unsigned int nPoints = std::max(10u,static_cast<unsigned int>(fabs(deltaS)));
+  const unsigned int nAnchors = std::max(3u, static_cast<unsigned int>(fabs(deltaS)/spacing));
+  WaypointList anchors(nAnchors);
+  for(unsigned int i = 0; i < nAnchors; ++i)
+  {
+    double s = sMin + spacing*i;
+    if((s < localWaypointsMaxS) && (s > localWaypointsMinS))
+    {
+      anchors[i] = generateWaypoint(s, localTrackWaypoints_);
+    }
+    else
+    {
+      anchors[i] = generateWaypoint(s, trackWaypoints_);
+    }
+  }
+  localTrackWaypoints_ = generateLocalWaypoints(anchors, nPoints);
+  localWaypointsMinS = localTrackWaypoints_.front().frenet.s;
+  localWaypointsMaxS = localTrackWaypoints_.back().frenet.s;
+
+  std::cout << sMin << " " << sMax << " " << deltaS << " " << localWaypointsMinS << " " << localWaypointsMaxS << std::endl;
+
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -152,49 +194,6 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::initialiaseLocalWaypoints(double s)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  WaypointList anchors(4);
-  anchors[0] = generateWaypoint(s, trackWaypoints_);
-  anchors[1] = generateWaypoint(s + 25, trackWaypoints_);
-  anchors[2] = generateWaypoint(s + 50, trackWaypoints_);
-  anchors[3] = generateWaypoint(s + 100, trackWaypoints_);
-  localTrackWaypoints_ = generateLocalWaypoints(anchors, 100);
-  localWaypointsMinS = localTrackWaypoints_.front().frenet.s;
-  localWaypointsMaxS = localTrackWaypoints_.back().frenet.s;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-void TrajectoryPlanner::updateLocalWaypoints(double sMin, double sMax)
-//---------------------------------------------------------------------------------------------------------------------
-{
-  const double spacing = 25;
-  const double deltaS = getDistanceAlongTrack(sMax, sMin);
-  const unsigned int nPoints = std::max(10u,static_cast<unsigned int>(fabs(deltaS)));
-  const unsigned int nAnchors = std::max(3u, static_cast<unsigned int>(fabs(deltaS)/spacing));
-  WaypointList anchors(nAnchors);
-  for(unsigned int i = 0; i < nAnchors; ++i)
-  {
-    double s = sMin + spacing*i;
-    if((s < localWaypointsMaxS) && (s > localWaypointsMinS))
-    {
-      anchors[i] = generateWaypoint(s, localTrackWaypoints_);
-    }
-    else
-    {
-      anchors[i] = generateWaypoint(s, trackWaypoints_);
-    }
-  }
-  localTrackWaypoints_ = generateLocalWaypoints(anchors, nPoints);
-  localWaypointsMinS = localTrackWaypoints_.front().frenet.s;
-  localWaypointsMaxS = localTrackWaypoints_.back().frenet.s;
-
-  std::cout << sMin << " " << sMax << " " << deltaS << " " << localWaypointsMaxS << " " << nPoints << std::endl;
-
-}
-
-//---------------------------------------------------------------------------------------------------------------------
 CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehicle& me,
                                                  const VehicleList& others, const CartesianPoseList& myPrevPath,
                                                  const FrenetPoint& myPrevPathEnd)
@@ -207,7 +206,7 @@ CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehi
   }
   else
   {
-    updateLocalWaypoints(myPrevPathEnd.s - 10, myPrevPathEnd.s + Behaviour::MAX_SPEED * Behaviour::MIN_RESPONSE_TIME);
+    updateLocalWaypoints(myPrevPathEnd.s, myPrevPathEnd.s + Behaviour::MAX_SPEED * Behaviour::MIN_RESPONSE_TIME);
   }
 
   const size_t myPrevPathSz = myPrevPath.size();
