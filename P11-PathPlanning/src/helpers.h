@@ -51,12 +51,12 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
 /// Generate a new waypoint within a path of original waypoints
 Waypoint generateWaypoint(double s, const WaypointList& wps);
 
-/// Populate with 'n' intermediate points by spline fitting the set of input waypoints. Only good for points
+/// Create new 'n' waypoints by spline fitting the set of input waypoints. Only good for points
 /// that generally go in the same direction.
 WaypointList generateLocalWaypoints(const WaypointList& newPoints, unsigned int n);
 
 /// Populate with 'n' intermediate points between each pair of input waypoints using cubic spline fit.
-WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n);
+WaypointList generateIntermediateWaypoins(const WaypointList& input, unsigned int n);
 
 struct NearestVehicles
 {

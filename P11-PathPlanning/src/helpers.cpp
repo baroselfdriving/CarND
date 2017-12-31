@@ -254,7 +254,7 @@ WaypointList generateLocalWaypoints(const WaypointList& points, unsigned int n)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-WaypointList generateFinerWaypoints(const WaypointList& input, unsigned int n)
+WaypointList generateIntermediateWaypoins(const WaypointList& input, unsigned int n)
 //---------------------------------------------------------------------------------------------------------------------
 {
   if(n < 1)

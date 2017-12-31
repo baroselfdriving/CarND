@@ -1,10 +1,11 @@
 # TODO
 
+- exceeds acceleration limit at track boundary for one cycle - ote ~ 6945. Why?
+- exceeds acceleration limit when starting from stop/low speed
+- separate out response_time from ramp_up_time
 - vehicle starts from zero turned backwards
 - deal with vehicle barging in to our path on short notice. Clear history and path and start again
 - avoiding collisions when changing lane
-- 'out of lane' when on the outside lane
-- 'max acceleration' when on the outside lane
 
 # Report points
 
