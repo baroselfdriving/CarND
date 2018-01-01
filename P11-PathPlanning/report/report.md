@@ -2,7 +2,10 @@
 Self-Driving Car Engineer Nanodegree Program (Term 3)
 ---
 ## Executive Summary
-The submitted source code implements an autonomous path planner for a simulated car on a 3-lane highway. 
+The submitted source code implements an autonomous path planner for a simulated car on a 3-lane highway. As shown in the image below, the car is able to continuously drive without incident multiple loops around the track. Incidents to consider included collisions, departing lanes inadvertently, exceeding acceleration and jerk limits (10m/s^2 and 10 m/s^3, respectively), and exceeding speed limit of 50 miles per hour.
+
+![autonomous path planning](https://github.com/cvilas/CarND/blob/master/P11-PathPlanning/report/media/t3p1-noIncident.png "Driving without incident for multiple loops")
+
 
 https://youtu.be/-0TvdNeugxE
 
