@@ -98,7 +98,6 @@ void VehicleModel::updateControl(double refSpeed, double ote, double cte)
 
   speed_ += 0.5 * (lastAcceleration_ + acceleration) * dt_;
   lastAcceleration_ = acceleration;
-  //speed_ = refSpeed + acceleration * dt_;
 
   lastOte_ = ote;
   sumOte_ += ote;
