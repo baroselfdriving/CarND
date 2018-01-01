@@ -54,9 +54,9 @@ private:
   double steeringAngle_;
   double speed_;
   CartesianPose pose_;
-  double lastCte_;
+  double lastCte_; //!< last cross track error
   double sumCte_;
-  double lastOte_;
+  double lastOte_; //!< last on-track error
   double sumOte_;
   double lastAcceleration_;
   bool doReset_;
