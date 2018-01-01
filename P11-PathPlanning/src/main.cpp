@@ -50,7 +50,8 @@ int main()
     return -1;
   }
 
-  sdcnd_t3p1::TrajectoryPlanner trajPlanner(trackWaypoints);
+  sdcnd_t3p1::WaypointList finerWps = sdcnd_t3p1::generateIntermediateWaypoins(trackWaypoints, 5);
+  sdcnd_t3p1::TrajectoryPlanner trajPlanner(finerWps);
   sdcnd_t3p1::BehaviourPredictor predictor;
   sdcnd_t3p1::BehaviourPlanner behplanner;
 

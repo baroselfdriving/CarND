@@ -1,6 +1,6 @@
 # TODO
 
-- exceeds acceleration limit at track boundary for one cycle - ote ~ 6945. Why?
+- exceeds acceleration limit at track boundary for one cycle
 - exceeds acceleration limit when starting from stop/low speed
 - separate out response_time from ramp_up_time
 - vehicle starts from zero turned backwards
@@ -22,3 +22,10 @@
 - using min_response_time as the criterion for speed control and lane changes (based on safe driving heuristics)
 - behaviours cost functions and weights
 - Brief description of classes and functionality
+
+- Limitations
+  - Requires 3 seconds response time. If vehicle barges into path with less than 3 sec to collision,
+  collision cannot be averted.
+  - Only considers changing into the next nearest lane
+  - Conservative unspohisticated motion model for predictions
+  - conservative lane change strategy. First priorty is to stay safe within the current lane

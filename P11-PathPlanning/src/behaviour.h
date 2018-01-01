@@ -27,7 +27,7 @@ struct Behaviour
 {
   static constexpr double MIN_RESPONSE_TIME = 3; //!< min time needed to respond to change in driving conditions
   static constexpr double LANE_CHANGE_DURATION = 5; //!< time required to change lane
-  static constexpr double INITIAL_SPEED_UP_TIME = 15; //!< ramp up at t=0
+  static constexpr double INITIAL_SPEED_UP_TIME = 7; //!< ramp up at t=0
   static constexpr double MAX_SPEED = .9 * SPEED_LIMIT;
 
   BehaviourType type;

@@ -38,7 +38,7 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
       const int theirLane = getLaneNumberFromFrenetD(nearest.behind->frenet.d);
       if(theirLane != myLane)
       {
-        // assumed worst case: we suddenly lose speed but vehicle behind speeds up
+        // assumed worst case: we lose speed but vehicle behind speeds up
         const double dist = getDistanceAlongTrack(me.frenet.s, nearest.behind->frenet.s);
         const double theirScale = 1.2;
         const double meScale = .8;
@@ -51,9 +51,9 @@ BehaviourPredictor::LanePredictionMap BehaviourPredictor::predict(const Vehicle&
     double laneSpeedFront = Behaviour::MAX_SPEED;
     if(nearest.ahead != others.end())
     {
-      // assumed worst case: we speed up but vehicle in front reduces speed
+      // assumed worst case: we keep speed but vehicle in front reduces speed
       const double theirScale = 0.5;
-      const double meScale = 1.2;
+      const double meScale = 1;
       const double dist = getDistanceAlongTrack(nearest.ahead->frenet.s, me.frenet.s);
       laneSpeedFront = nearest.ahead->speed;
       freeDistAhead = dist - (meScale * me.speed - theirScale * nearest.ahead->speed) * Behaviour::LANE_CHANGE_DURATION;

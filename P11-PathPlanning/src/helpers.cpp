@@ -121,6 +121,11 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
 //---------------------------------------------------------------------------------------------------------------------
 {
   WaypointList::const_iterator prev_wp = wps.begin();
+  if(s < prev_wp->frenet.s)
+  {
+    std::cout << "WARNING [getCartesianFromFrenet] s = " << s << " not within waypoints range ["
+              << wps.front().frenet.s << ", " << wps.back().frenet.s << "]" << std::endl;
+  }
   while(s > (prev_wp+1)->frenet.s && (prev_wp != wps.end()-1) )
   {
     prev_wp++;
@@ -130,12 +135,14 @@ CartesianPose getCartesianFromFrenet(double s, double d, const WaypointList& wps
   if(wp2 == wps.end())
   {
     wp2 = wps.begin();
+    std::cout << "WARNING [getCartesianFromFrenet] Reached end of track - wrapped around" << std::endl;
   }
 
   const double heading = atan2((wp2->point.y - prev_wp->point.y),(wp2->point.x - prev_wp->point.x));
 
   // the x,y,s along the segment
-  double seg_s = (s - prev_wp->frenet.s);
+  //double seg_s = (s - prev_wp->frenet.s);
+  double seg_s = getDistanceAlongTrack(s, prev_wp->frenet.s);
   double seg_x = prev_wp->point.x + seg_s*cos(heading);
   double seg_y = prev_wp->point.y + seg_s*sin(heading);
 
@@ -187,6 +194,10 @@ Waypoint generateWaypoint(double s, const WaypointList& wps)
   Waypoint wp;
   wp.point = getCartesianFromFrenet(s,0,wps);
   wp.frenet.s = s;
+  while(wp.frenet.s > MAX_TRACK_LENGTH)
+  {
+    wp.frenet.s -= MAX_TRACK_LENGTH;
+  }
   wp.frenet.d = 0;
   wp.frenet.dx = cos(wp.point.heading-M_PI/2.);
   wp.frenet.dy = sin(wp.point.heading-M_PI/2.);

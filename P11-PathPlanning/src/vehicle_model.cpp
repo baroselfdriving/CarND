@@ -51,10 +51,10 @@ CartesianPose VehicleModel::predict(const CartesianPose& refPose, double refSpee
 
   // compute on-track error
   const double ote = trackingError.x * cos(refPose.heading) + trackingError.y * sin(refPose.heading);
-
+/*
   std::cout << std::fixed << std::setprecision(3) << std::setfill('0') << std::setw(7)
             << "Error : " << cte << " " << ote << " " << refSpeed - speed_ << std::endl;
-
+*/
   // do the control
   updateControl(refSpeed, ote, cte);
   return move();
@@ -66,7 +66,7 @@ CartesianPose VehicleModel::move()
 {
   pose_.x += speed_ * cos(pose_.heading) * dt_;
   pose_.y += speed_ * sin(pose_.heading) * dt_;
-  pose_.heading += (speed_/Lf) * steeringAngle_ * dt_;
+  pose_.heading += (speed_/Lf) * steeringAngle_ * dt_; /// \todo restrict to [-pi,pi]
 
   //std::cout << pose_.x << " " << pose_.y << " " << pose_.heading * 180/M_PI << std::endl;
   return pose_;
@@ -82,6 +82,7 @@ void VehicleModel::updateControl(double refSpeed, double ote, double cte)
     lastOte_ = ote;
     doReset_ = false;
   }
+
   // predicted error. If the control is working, these should eventually go to zero
   const double dcte = cte - lastCte_;
   const double dote = ote - lastOte_;

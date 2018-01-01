@@ -58,6 +58,8 @@ WaypointList generateLocalWaypoints(const WaypointList& newPoints, unsigned int 
 /// Populate with 'n' intermediate points between each pair of input waypoints using cubic spline fit.
 WaypointList generateIntermediateWaypoins(const WaypointList& input, unsigned int n);
 
+inline bool isFrenetInRange(double s, const WaypointList& wps) { return ((s > wps.front().frenet.s) && (s < wps.back().frenet.s)); }
+
 struct NearestVehicles
 {
   VehicleList::const_iterator ahead;
