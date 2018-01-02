@@ -182,7 +182,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t
       integrator.reset(fs.s, fs.sv);
     }
 
-    std::cout << t0 << " " << fs.sv << " " << fs.sa << " " << fs.sj << std::endl;
+    //std::cout << t0 << " " << fs.sv << " " << fs.sa << " " << fs.sj << std::endl;
 
     // reference trajectory coordinates
     const CartesianPose refPose = isFrenetInRange(fs.s, localTrackWaypoints_) ?
