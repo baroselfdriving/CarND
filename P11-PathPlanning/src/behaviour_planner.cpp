@@ -69,7 +69,7 @@ BehaviourTypesList BehaviourPlanner::getSuccessorStates(const BehaviourPredictor
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Behaviour BehaviourPlanner::compute(const BehaviourPredictor::LanePredictionMap& predictions, const Vehicle& me)
+Behaviour BehaviourPlanner::plan(const BehaviourPredictor::LanePredictionMap& predictions, const Vehicle& me)
 //---------------------------------------------------------------------------------------------------------------------
 {
   std::map<BehaviourType, double> costMap;

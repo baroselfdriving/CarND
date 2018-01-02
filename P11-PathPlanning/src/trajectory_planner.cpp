@@ -199,7 +199,7 @@ void TrajectoryPlanner::updateTrajectory(double longSpeed, double latPos, size_t
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-CartesianPoseList TrajectoryPlanner::computePlan(Behaviour behaviour, const Vehicle& me,
+CartesianPoseList TrajectoryPlanner::plan(Behaviour behaviour, const Vehicle& me,
                                                  const VehicleList& others, const CartesianPoseList& myPrevPath,
                                                  const FrenetPoint& myPrevPathEnd)
 //---------------------------------------------------------------------------------------------------------------------

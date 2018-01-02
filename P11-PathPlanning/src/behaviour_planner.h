@@ -21,7 +21,7 @@ public:
 
   void reset (const Vehicle& me);
 
-  Behaviour compute(const BehaviourPredictor::LanePredictionMap& predictions, const Vehicle& me);
+  Behaviour plan(const BehaviourPredictor::LanePredictionMap& predictions, const Vehicle& me);
 
   /// Cost function for potential collisions.
   double collisionCost(const BehaviourPredictor::Prediction& pred);

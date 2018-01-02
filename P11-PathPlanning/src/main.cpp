@@ -146,19 +146,9 @@ int main()
           std::vector<double> next_y_vals;
 
           /// ------------ PROJECT IMPLEMENTATION --------------------
-          sdcnd_t3p1::Vehicle tmpCar = car;
-          if(previousPathSz != 0)
-          {
-            const auto& lastPoint = trajPlanner.getHistory().back();
-            tmpCar.frenet.s = lastPoint.s;
-            tmpCar.frenet.d = lastPoint.d;
-            tmpCar.position = lastPoint.pose;
-            tmpCar.speed = lastPoint.sv;
-            tmpCar.velocity = {0,0};
-          }
           const auto predictions = predictor.predict(car, otherVehicles);
-          const auto behaviour = behplanner.compute(predictions, car);
-          const auto path = trajPlanner.computePlan(behaviour, car, otherVehicles, previousPath, prevPathEnd);
+          const auto behaviour = behplanner.plan(predictions, car);
+          const auto path = trajPlanner.plan(behaviour, car, otherVehicles, previousPath, prevPathEnd);
           for(const auto& item : path)
           {
             next_x_vals.push_back( item.x );
